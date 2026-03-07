@@ -1,0 +1,69 @@
+<div class="main-view-shell">
+  <!-- ── Custom Tab Bar ──────────────────────── -->
+  <div class="tab-bar">
+    <div class="tabs-scroll">
+      @for (tab of tabs; track tab.id) {
+        <div class="graph-tab"
+             [class.active]="tab.id === activeTabId"
+             (click)="selectTab(tab.id)"
+             (dblclick)="startRename(tab, $event)">
+
+          @if (tab.isRenaming) {
+            <input #renameInput
+              class="tab-rename-input"
+              [(ngModel)]="renameValue"
+              (blur)="commitRename(tab)"
+              (keydown)="onRenameKey($event, tab)"
+              (click)="$event.stopPropagation()" />
+          } @else {
+            <span class="tab-label">{{ tab.name }}</span>
+            <span class="tab-status-dot" [class.has-graph]="!!tab.graph"></span>
+          }
+
+          @if (tabs.length > 1) {
+            <button class="tab-close" (click)="closeTab(tab.id, $event)" title="Close tab">✕</button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Add new tab -->
+    <button class="tab-add-btn" (click)="addTab()" title="New graph tab">+</button>
+
+    <!-- Toolbar right -->
+    <div class="tab-toolbar">
+      <button class="tool-btn" [class.active]="viewMode === 'simple'" (click)="setViewMode('simple')" title="Simple visualizer">◎</button>
+      <button class="tool-btn" [class.active]="viewMode === 'block'"  (click)="setViewMode('block')"  title="Block visualizer">▦</button>
+      <div class="toolbar-sep"></div>
+      <button class="tool-btn" (click)="fitToScreen(); render()" title="Fit to screen">⊡</button>
+      <div class="toolbar-sep"></div>
+      <button class="tool-btn accent" (click)="loadDemo()" title="Load demo into active tab">Demo</button>
+    </div>
+  </div>
+
+  <!-- ── Canvas Area ─────────────────────────── -->
+  <div class="canvas-wrapper" #wrapper>
+    <canvas #canvas
+      class="graph-canvas"
+      [class.alt-cursor]="false"
+      (mousedown)="onMouseDown($event)"
+      (mousemove)="onMouseMove($event)"
+      (mouseup)="onMouseUp($event)"
+      (wheel)="onWheel($event)"
+      (mouseleave)="isPanning = false">
+    </canvas>
+
+    <!-- Hint overlay when empty -->
+    @if (!graphService.getActiveGraph()) {
+      <div class="canvas-hint">
+        <kbd>Alt + Drag</kbd> to move nodes &nbsp;·&nbsp;
+        <kbd>Scroll</kbd> to zoom &nbsp;·&nbsp;
+        <kbd>Drag</kbd> to pan &nbsp;·&nbsp;
+        <kbd>Click</kbd> to select
+      </div>
+    }
+
+    <!-- Zoom badge -->
+    <div class="zoom-badge">{{ (scale * 100).toFixed(0) }}%</div>
+  </div>
+</div>

@@ -1,0 +1,240 @@
+/* =============================================
+   NESSIE — Global Styles
+   Dark navy/cyan theme inspired by the logo
+   ============================================= */
+
+:root {
+  /* Color Palette — drawn from the logo */
+  --bg-void:       #040c18;
+  --bg-darkest:    #060f1e;
+  --bg-dark:       #0a1628;
+  --bg-panel:      #0d1d35;
+  --bg-elevated:   #112240;
+  --bg-hover:      #16305a;
+  --border-dim:    #1a3355;
+  --border:        #1e4a7a;
+  --border-bright: #2a6aaa;
+
+  --accent:        #00c8f8;
+  --accent-dim:    #0099cc;
+  --accent-glow:   rgba(0, 200, 248, 0.15);
+  --accent-glow-strong: rgba(0, 200, 248, 0.35);
+
+  --cyan-bright:   #4de8ff;
+  --cyan-mid:      #00b4d8;
+  --cyan-dark:     #0077a8;
+
+  --text-bright:   #cceeff;
+  --text:          #8ab4d4;
+  --text-dim:      #4a7a9b;
+  --text-muted:    #2d5070;
+
+  --success:       #00e5a0;
+  --warning:       #f0b429;
+  --error:         #ff4d6d;
+
+  /* Layout */
+  --menubar-height: 32px;
+  --statusbar-height: 24px;
+  --font-ui:       'Rajdhani', sans-serif;
+  --font-mono:     'JetBrains Mono', monospace;
+
+  /* Shadows */
+  --shadow-panel:  0 0 0 1px var(--border-dim), 0 4px 24px rgba(0, 0, 0, 0.5);
+  --glow-accent:   0 0 12px var(--accent-glow), 0 0 24px rgba(0, 200, 248, 0.05);
+}
+
+/* === Reset & Base === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-void);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === Scrollbars === */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-darkest);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-dim);
+}
+
+/* === GoldenLayout Theme Overrides === */
+.lm_goldenlayout {
+  background: var(--bg-void);
+}
+
+.lm_header {
+  background: var(--bg-darkest) !important;
+  height: 32px !important;
+  border-bottom: 1px solid var(--border-dim) !important;
+}
+
+.lm_tab {
+  background: var(--bg-panel) !important;
+  color: var(--text-dim) !important;
+  border: none !important;
+  border-right: 1px solid var(--border-dim) !important;
+  font-family: var(--font-ui) !important;
+  font-size: 12px !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  padding: 0 14px !important;
+  transition: all 0.15s ease !important;
+
+  &:hover {
+    color: var(--text) !important;
+    background: var(--bg-elevated) !important;
+  }
+
+  &.lm_active {
+    background: var(--bg-dark) !important;
+    color: var(--accent) !important;
+    border-bottom: 2px solid var(--accent) !important;
+  }
+}
+
+.lm_tab .lm_title {
+  font-family: var(--font-ui) !important;
+  font-weight: 500 !important;
+}
+
+.lm_controls .lm_close,
+.lm_controls .lm_maximise,
+.lm_controls .lm_minimise,
+.lm_controls .lm_popout {
+  opacity: 0.5;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.lm_content {
+  background: var(--bg-dark) !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+.lm_splitter {
+  background: var(--border-dim) !important;
+  transition: background 0.15s;
+
+  &:hover, &.lm_dragging {
+    background: var(--accent) !important;
+  }
+}
+
+.lm_dragProxy .lm_content {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 16px var(--accent-glow);
+}
+
+/* === Utility Classes === */
+.panel-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-dark);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--bg-darkest);
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  gap: 8px;
+  flex-shrink: 0;
+
+  .panel-icon {
+    color: var(--accent);
+    font-size: 14px;
+  }
+}
+
+.panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+}
+
+/* === Buttons === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+  letter-spacing: 0.05em;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  &.btn-accent {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+
+    &:hover {
+      background: var(--accent-glow-strong);
+      box-shadow: var(--glow-accent);
+    }
+  }
+}
+
+/* === Empty state === */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+
+  .empty-icon {
+    font-size: 48px;
+    opacity: 0.3;
+    filter: drop-shadow(0 0 8px var(--accent));
+  }
+}

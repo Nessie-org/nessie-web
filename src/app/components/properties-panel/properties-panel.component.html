@@ -1,0 +1,63 @@
+<div class="props-container">
+  @if (!selectedNode) {
+    <div class="props-empty">
+      <div class="empty-icon">⊞</div>
+      <div>Select a node to<br>view its properties</div>
+    </div>
+  } @else {
+    <!-- Node header -->
+    <div class="node-header">
+      <div class="node-badge">{{ selectedNode.id }}</div>
+      <div class="node-name">{{ selectedNode.label }}</div>
+      <div class="node-pos">x={{ selectedNode.x ?? 0 | number:'1.0-0' }}, y={{ selectedNode.y ?? 0 | number:'1.0-0' }}</div>
+    </div>
+
+    <!-- Properties table -->
+    @if (properties.length > 0) {
+      <div class="section-title">Properties</div>
+      <div class="props-table">
+        @for (prop of properties; track prop.key) {
+          <div class="prop-row">
+            <span class="prop-key">{{ prop.key }}</span>
+            <span class="prop-type" [style.color]="getTypeColor(prop.type)">{{ prop.type }}</span>
+            <span class="prop-value">{{ prop.value }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Outgoing edges -->
+    @if (outgoing.length > 0) {
+      <div class="section-title">Outgoing ({{ outgoing.length }})</div>
+      <div class="edge-list">
+        @for (item of outgoing; track item.edge.id) {
+          <div class="edge-row" (click)="item.target && selectNode(item.target.id)">
+            <span class="edge-arrow">→</span>
+            <span class="edge-node-label">{{ item.target?.label ?? '?' }}</span>
+            <span class="edge-id">{{ item.edge.id }}</span>
+            @if (item.edge.label) {
+              <span class="edge-tag">{{ item.edge.label }}</span>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Incoming edges -->
+    @if (incoming.length > 0) {
+      <div class="section-title">Incoming ({{ incoming.length }})</div>
+      <div class="edge-list">
+        @for (item of incoming; track item.edge.id) {
+          <div class="edge-row" (click)="item.source && selectNode(item.source.id)">
+            <span class="edge-arrow incoming">←</span>
+            <span class="edge-node-label">{{ item.source?.label ?? '?' }}</span>
+            <span class="edge-id">{{ item.edge.id }}</span>
+            @if (item.edge.label) {
+              <span class="edge-tag">{{ item.edge.label }}</span>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

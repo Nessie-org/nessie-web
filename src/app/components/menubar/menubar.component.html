@@ -1,0 +1,36 @@
+<nav class="menubar" (mouseleave)="close()">
+  <div class="menubar-logo">
+    <span class="logo-hex">⬡</span>
+    <span class="logo-text">NESSIE</span>
+  </div>
+
+  <div class="menubar-menus">
+    @for (menu of menus; track menu.label) {
+      <div class="menu-item" [class.active]="activeMenu === menu.label" (click)="toggle(menu.label)">
+        {{ menu.label }}
+
+        @if (activeMenu === menu.label) {
+          <div class="dropdown" (click)="$event.stopPropagation()">
+            @for (item of menu.items; track $index) {
+              @if (item.type === 'separator') {
+                <div class="sep"></div>
+              } @else {
+                <div class="drop-item" [class.toggle]="item.type === 'toggle'" (click)="exec(item)">
+                  <span class="check" [class.visible]="item.type === 'toggle' && item.panelId && layoutService.isPanelVisible(item.panelId)">✓</span>
+                  <span class="item-label">{{ item.label }}</span>
+                  @if (item.shortcut) {
+                    <span class="shortcut">{{ item.shortcut }}</span>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="menubar-right">
+    <span class="version">v0.1.0</span>
+  </div>
+</nav>

@@ -1,0 +1,71 @@
+<div class="filters-container">
+
+  <!-- Stats bar -->
+  <div class="filter-stats" [class.active]="hasActiveFilters">
+    <span class="stat">
+      <span class="stat-val">{{ matchingNodes }}</span><span class="stat-total">/{{ totalNodes }}</span> nodes
+    </span>
+    <span class="stat-sep">·</span>
+    <span class="stat">
+      <span class="stat-val">{{ matchingEdges }}</span><span class="stat-total">/{{ totalEdges }}</span> edges
+    </span>
+    @if (hasActiveFilters) {
+      <button class="reset-btn" (click)="resetFilters()">✕ Reset</button>
+    }
+  </div>
+
+  <!-- Node Filters -->
+  <div class="filter-group">
+    <div class="filter-group-title">Node Filters</div>
+
+    <div class="filter-row">
+      <label>Label contains</label>
+      <input class="filter-input" type="text" [(ngModel)]="filters.nodeLabelContains"
+             (ngModelChange)="applyFilters()" placeholder="e.g. Node A" />
+    </div>
+
+    <div class="filter-row">
+      <label>ID contains</label>
+      <input class="filter-input" type="text" [(ngModel)]="filters.nodeIdContains"
+             (ngModelChange)="applyFilters()" placeholder="e.g. n1" />
+    </div>
+
+    <div class="filter-row">
+      <label>Property key</label>
+      <input class="filter-input" type="text" [(ngModel)]="filters.propertyKey"
+             (ngModelChange)="applyFilters()" placeholder="e.g. type" />
+    </div>
+
+    <div class="filter-row" [class.disabled]="!filters.propertyKey">
+      <label>Property value</label>
+      <input class="filter-input" type="text" [(ngModel)]="filters.propertyValue"
+             (ngModelChange)="applyFilters()" placeholder="e.g. root"
+             [disabled]="!filters.propertyKey" />
+    </div>
+
+    <div class="filter-row toggle-row">
+      <label>Only connected</label>
+      <div class="toggle-wrap">
+        <input type="checkbox" id="connectedToggle" [(ngModel)]="filters.showOnlyConnected"
+               (ngModelChange)="applyFilters()" />
+        <label class="toggle" for="connectedToggle"></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edge Filters -->
+  <div class="filter-group">
+    <div class="filter-group-title">Edge Filters</div>
+
+    <div class="filter-row">
+      <label>Label contains</label>
+      <input class="filter-input" type="text" [(ngModel)]="filters.edgeLabelContains"
+             (ngModelChange)="applyFilters()" placeholder="e.g. cycle" />
+    </div>
+  </div>
+
+  <!-- Info note -->
+  <div class="filter-note">
+    ℹ Filters currently show match counts. Full visual filtering will be applied in the next release.
+  </div>
+</div>

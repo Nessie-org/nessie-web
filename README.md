@@ -1,59 +1,139 @@
-# NessieWeb
+# Nessie — Graph Explorer
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.1.
+> Graph visualization platform with multi-panel VSCode-like interface.
 
-## Development server
+![Nessie Logo](src/assets/logo.jpeg)
 
-To start a local development server, run:
+## Tech Stack
+
+- **Frontend**: Angular 17 (standalone components)
+- **Layout**: GoldenLayout v2 (VSCode-like panels)
+- **Visualization**: Canvas API (extendable to D3.js)
+- **Styling**: SCSS with custom dark navy/cyan theme
+
+## Architecture
+
+```
+src/app/
+├── components/
+│   ├── menubar/          # Top menu bar (File, View, Graph, Help)
+│   ├── statusbar/        # Bottom status bar
+│   ├── main-view/        # Main graph canvas (pan, zoom, drag)
+│   ├── tree-view/        # Tree explorer panel
+│   ├── bird-view/        # Minimap / bird's-eye overview
+│   └── console-panel/    # Log console (closeable)
+├── services/
+│   ├── layout.service.ts # Panel state, console messages, selection sync
+│   └── graph.service.ts  # Graph model & data management
+```
+
+## Layout
+
+```
+┌─────────────────────────────────────────────────────┐
+│  NESSIE  File  View  Graph  Help            v0.1.0   │ ← Menubar
+├──────────┬───────────┬────────────────────────────────┤
+│          │           │                                │
+│  Tree    │  Bird     │         Main View              │
+│  View    │  View     │    (pan, zoom, drag)           │
+│          │           │                                │
+│  22%     │  18%      │         60%                    │
+├──────────┴───────────┴────────────────────────────────┤
+│                                                        │
+│  Console (closeable)                                   │
+│                                                        │
+├────────────────────────────────────────────────────────┤
+│  ● Demo Graph  |  6 nodes  |  6 edges  |  Directed     │ ← Statusbar
+└────────────────────────────────────────────────────────┘
+```
+
+## Quick Start
+
+### Prerequisites
+- Node.js >= 18
+- npm >= 9
+
+### Installation
 
 ```bash
+# Clone the repo
+git clone <your-repo-url>
+cd nessie
+
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+# or
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open [http://localhost:4200](http://localhost:4200) in your browser.
 
-## Code scaffolding
+### Load a Demo Graph
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+1. Click **File › Load Demo Graph** in the menu bar  
+2. Or click the **⬡ Load Demo** button in the Main View toolbar
+
+## Panel Controls
+
+| Panel      | Toggle shortcut |
+|------------|----------------|
+| Tree View  | View › Tree View |
+| Bird View  | View › Bird View |
+| Console    | View › Console   |
+
+Panels can also be resized and rearranged by dragging GoldenLayout tab headers.
+
+## Cross-panel Node Selection
+
+Clicking a node in **any** panel (Main View, Tree View, or Bird View) will:
+- Highlight the node in **all three views**
+- Update the status bar with the selected node ID
+- Log the selection to the Console
+
+## Extending the Platform
+
+### Adding a Data Source Plugin
+
+1. Create a service implementing graph ingestion:
+   ```typescript
+   // data-source-plugins/my-source.service.ts
+   @Injectable({ providedIn: 'root' })
+   export class MySourceService {
+     parse(data: string): Graph { /* ... */ }
+   }
+   ```
+
+2. Inject into `GraphService.setGraph()`
+
+### Adding a Visualizer Plugin
+
+1. Create a component that subscribes to `GraphService.graph$`
+2. Register it as a GoldenLayout component in `app.component.ts`
+
+## Build
 
 ```bash
-ng generate component component-name
+ng build --configuration production
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Output: `dist/nessie/`
 
-```bash
-ng generate --help
+## Project Structure (Full)
+
 ```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
+nessie/
+├── src/
+│   ├── app/
+│   │   ├── components/     # UI components
+│   │   ├── services/       # Business logic
+│   │   ├── app.component.* # Root shell + GoldenLayout init
+│   │   └── app.config.ts   # App providers
+│   ├── styles.scss          # Global theme variables
+│   └── index.html
+├── angular.json
+├── package.json
+└── tsconfig.json
 ```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
