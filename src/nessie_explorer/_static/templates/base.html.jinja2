@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nessie — Graph Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+{{ inline_css }}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Toolbar ───────────────────────────────────────────────── -->
+  <div id="toolbar">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="3" fill="#00d9ff"/>
+        <circle cx="4"  cy="4"  r="2" stroke="#00d9ff" stroke-width="1.2"/>
+        <circle cx="18" cy="4"  r="2" stroke="#00d9ff" stroke-width="1.2"/>
+        <circle cx="4"  cy="18" r="2" stroke="#3ddc84" stroke-width="1.2"/>
+        <circle cx="18" cy="18" r="2" stroke="#3ddc84" stroke-width="1.2"/>
+        <line x1="11" y1="8"  x2="5.4"  y2="5.4"  stroke="#00d9ff" stroke-width="1" opacity=".5"/>
+        <line x1="11" y1="8"  x2="16.6" y2="5.4"  stroke="#00d9ff" stroke-width="1" opacity=".5"/>
+        <line x1="11" y1="14" x2="5.4"  y2="16.6" stroke="#3ddc84" stroke-width="1" opacity=".5"/>
+        <line x1="11" y1="14" x2="16.6" y2="16.6" stroke="#3ddc84" stroke-width="1" opacity=".5"/>
+      </svg>
+      <span class="brand-name">Nessie<em>Graph</em></span>
+    </div>
+
+    <button class="tb-btn" id="btn-fit">
+      <svg viewBox="0 0 16 16" fill="currentColor">
+        <path d="M1.5 1h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0V1.5a.5.5 0 0 1 .5-.5zm9 0a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1h3zm2 0h.5a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3h-.5a.5.5 0 0 1 0-1zM1 10.5a.5.5 0 0 1 1 0v3h3a.5.5 0 0 1 0 1H1.5a.5.5 0 0 1-.5-.5v-3zm13 0a.5.5 0 0 1 1 0v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1h3v-3z"/>
+      </svg>
+      Fit
+    </button>
+    <button class="tb-btn" id="btn-reload" disabled>
+      <svg viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+      </svg>
+      Reload
+    </button>
+
+    <div class="tb-sep"></div>
+    <span class="tb-spacer"></span>
+
+    <div class="plugin-chip" id="plugin-chip" title="Active visualizer plugin">
+      <span class="plugin-dot"></span>
+      <span class="plugin-name" id="plugin-name">—</span>
+    </div>
+
+    <div class="tb-sep"></div>
+    <button class="tb-btn icon-btn" id="btn-settings-toggle" title="Settings" style="width:32px;padding:0;justify-content:center">⚙</button>
+  </div>
+
+  <!-- ── Workspace Tab Bar ─────────────────────────────────────── -->
+  <div id="wsbar">
+    {%- for ws in workspaces %}
+    <div class="ws-tab{% if ws.is_active %} active{% endif %}" data-ws-id="{{ ws.id }}">
+      <span class="ws-dot empty"></span>
+      <span class="ws-tab-label">{{ ws.name }}</span>
+      <span class="ws-tab-close" title="Close">✕</span>
+    </div>
+    {%- endfor %}
+    <div class="ws-add" id="ws-add" title="New workspace">＋</div>
+  </div>
+
+  <!-- ── Workspace Content — server-rendered, scripts execute ──── -->
+  <div id="ws-content">
+    {%- for ws in workspaces %}
+    <div class="ws-pane{% if ws.is_active %} active{% endif %}" data-ws-id="{{ ws.id }}">
+      <div class="layout">
+
+        <!-- LEFT: Tree View -->
+        <div class="col col-left" style="width:220px">
+          <div class="panel" style="flex:1">
+            <div class="panel-hdr">
+              <span class="panel-title">Tree View</span>
+              <div class="panel-actions">
+                <button class="icon-btn btn-expand-all"   title="Expand all">⊞</button>
+                <button class="icon-btn btn-collapse-all" title="Collapse all">⊟</button>
+              </div>
+            </div>
+            <div class="tree-body" style="flex:1;overflow-y:auto">
+              <div class="tree-empty">Load a graph to populate the tree.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v-handle v-handle-left"></div>
+
+        <!-- CENTER: main view + console/filters -->
+        <div class="col col-center">
+
+          <div class="main-view" style="flex:1;min-height:0">
+
+            {%- if ws.is_active %}
+            <!-- ── Plugin HTML (active workspace only) ── -->
+            {{ ws.plugin_html | safe }}
+            {%- else %}
+            <!-- ── Inactive workspace — plugin HTML loaded on tab click (TODO) ── -->
+            {%- endif %}
+
+            <div class="graph-empty">
+              <div class="ei">⬡</div>
+              <div class="em">No graph loaded</div>
+              <div class="eh">Waiting for graph data…</div>
+            </div>
+
+            <div class="filter-banner">
+              <span class="filter-banner-txt">⚗ Filter active</span>
+              <button class="fb-clear">✕ Clear all</button>
+            </div>
+
+            <div class="zoom-ctrls">
+              <button class="zoom-btn zoom-in">+</button>
+              <button class="zoom-btn zoom-fit">⊡</button>
+              <button class="zoom-btn zoom-out">−</button>
+            </div>
+          </div>
+
+          <div class="h-handle"></div>
+
+          <div class="bottom-pane" style="height:190px;flex-basis:190px;flex-grow:0;flex-shrink:0">
+            <div class="btabs">
+              <div class="btab active" data-tab="console">▶ Console</div>
+              <div class="btab" data-tab="filters">
+                ⚗ Filters
+                <span class="btab-badge" style="display:none">0</span>
+              </div>
+            </div>
+
+            <div class="tab-pane active" data-tab-id="console">
+              <div class="con-output"></div>
+              <div class="con-input-row">
+                <span class="con-prompt">nessie:~$</span>
+                <input class="con-input" type="text" autocomplete="off"
+                       spellcheck="false" placeholder="type 'help' for commands…">
+              </div>
+            </div>
+
+            <div class="tab-pane" data-tab-id="filters">
+              <div class="filter-bar">
+                <input class="filter-input-txt filter-attr" type="text" placeholder="attribute name">
+                <select class="filter-select filter-op">
+                  <option value="==">==</option>
+                  <option value="!=">!=</option>
+                  <option value="&lt;">&lt;</option>
+                  <option value="&lt;=">&lt;=</option>
+                  <option value="&gt;">&gt;</option>
+                  <option value="&gt;=">&gt;=</option>
+                </select>
+                <input class="filter-input-txt filter-val" type="text" placeholder="value">
+                <button class="filter-apply">Apply</button>
+                <button class="filter-reset">Reset all</button>
+              </div>
+              <div class="filter-stack">
+                <div class="filter-empty">No active filters</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v-handle v-handle-right"></div>
+
+        <!-- RIGHT: Bird View + Properties + Settings -->
+        <div class="col col-right" style="width:240px">
+          <div class="bv-panel" style="height:188px">
+            <div class="panel-hdr"><span class="panel-title">Bird View</span></div>
+            <div class="bv-wrap" style="flex:1">
+              <canvas class="bv-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="props-panel" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+            <div class="panel-hdr"><span class="panel-title">Properties</span></div>
+            <div class="props-body" style="flex:1;overflow-y:auto">
+              <div class="props-empty">Select a node to inspect</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="settings-hdr">
+              <span>⚙ Physics Settings</span>
+              <span class="settings-arrow">▼</span>
+            </div>
+            <div class="settings-body">
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Link Distance</span><span class="cv v-link">120</span></div>
+                <input class="ctrl-slider sl-link" type="range" min="10" max="2000" step="10" value="200">
+              </div>
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Charge</span><span class="cv v-charge">-300</span></div>
+                <input class="ctrl-slider sl-charge" type="range" min="-3000" max="0" step="10" value="-500">
+              </div>
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Collision Padding</span><span class="cv v-coll">20</span></div>
+                <input class="ctrl-slider sl-coll" type="range" min="0" max="300" step="5" value="20">
+              </div>
+              <div class="sim-row">
+                <span>Simulation</span>
+                <div class="toggle on sim-toggle"><div class="toggle-k"></div></div>
+              </div>
+              <div class="settings-reset-row">
+                <button class="reset-btn">Reset defaults</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /layout -->
+    </div><!-- /ws-pane -->
+    {%- endfor %}
+  </div>
+
+  <!-- ── Status Bar ────────────────────────────────────────────── -->
+  <div id="statusbar">
+    <div class="sb-item">
+      <span class="sb-dot" id="sb-dot"></span>
+      <span id="sb-status">No graph loaded</span>
+    </div>
+    <div class="sb-sep"></div>
+    <div class="sb-item" id="sb-stats" style="display:none">
+      <span class="sb-acc" id="sb-n">0</span>n ·
+      <span class="sb-acc" id="sb-e">0</span>e
+    </div>
+    <div class="sb-sep" id="sb-sep2" style="display:none"></div>
+    <div class="sb-item" id="sb-sel" style="display:none">
+      ◆ <span class="sb-acc" id="sb-sel-id"></span>
+    </div>
+    <span class="sb-spacer"></span>
+    <div class="sb-item" id="sb-zoom-item" style="display:none">
+      <span id="sb-zoom">100%</span>
+    </div>
+    <div class="sb-sep"></div>
+    <div class="sb-item">
+      <span class="sb-grn">●</span> <span id="sb-plugin-label">—</span>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Resize drag overlay -->
+<div id="drag-overlay"></div>
+
+<!-- ── Server-injected state ─────────────────────────────────── -->
+<script>
+window.NESSIE_SERVER_STATE = {{ server_state_json | tojson}};
+</script>
+
+<!-- ── Application scripts ───────────────────────────────────── -->
+<script>
+{{ inline_js }}
+</script>
+</body>
+</html>

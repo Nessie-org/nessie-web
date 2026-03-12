@@ -1,0 +1,88 @@
+/* ══════════════════════════════════════════════════════════════
+   global.css — Design tokens, reset, scrollbars, body, app shell
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Design Tokens ──────────────────────────────────────────── */
+:root {
+  --bg:            #0c0d10;
+  --bg-surface:    #111318;
+  --bg-raised:     #181b22;
+  --bg-hover:      #1e2129;
+  --bg-active:     #23272f;
+  --border:        #252830;
+  --border-bright: #32363f;
+  --accent:        #00d9ff;
+  --accent-dim:    rgba(0,217,255,.12);
+  --accent-glow:   rgba(0,217,255,.26);
+  --green:         #3ddc84;
+  --green-dim:     rgba(61,220,132,.12);
+  --amber:         #ffb347;
+  --amber-dim:     rgba(255,179,71,.12);
+  --red:           #ff5f57;
+  --red-dim:       rgba(255,95,87,.12);
+  --text-1:        #dde1ec;
+  --text-2:        #8b90a0;
+  --text-3:        #454a58;
+  --font-mono:     'JetBrains Mono', monospace;
+  --font-ui:       'Syne', sans-serif;
+  --toolbar-h:     42px;
+  --wsbar-h:       34px;
+  --statusbar-h:   24px;
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text-1);
+  font-family: var(--font-mono); font-size: 12px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scanline overlay */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,.025) 2px, rgba(0,0,0,.025) 4px
+  );
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────── */
+::-webkit-scrollbar             { width: 5px; height: 5px; }
+::-webkit-scrollbar-track       { background: transparent; }
+::-webkit-scrollbar-thumb       { background: var(--border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── App shell ──────────────────────────────────────────────── */
+#app {
+  display: flex; flex-direction: column;
+  height: 100vh; width: 100vw; overflow: hidden;
+}
+
+/* ── Shared panel chrome ────────────────────────────────────── */
+.panel { display: flex; flex-direction: column; overflow: hidden; background: var(--bg-raised); }
+
+.panel-hdr {
+  display: flex; align-items: center;
+  height: 32px; padding: 0 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  gap: 7px; flex-shrink: 0; user-select: none;
+}
+
+.panel-title {
+  font-size: 10px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--text-2);
+}
+
+.panel-actions { margin-left: auto; display: flex; gap: 2px; }
+
+.icon-btn {
+  width: 22px; height: 22px; display: flex; align-items: center;
+  justify-content: center; background: none; border: none;
+  color: var(--text-3); border-radius: 3px; cursor: pointer;
+  font-size: 13px; transition: color .1s, background .1s;
+}
+.icon-btn:hover { color: var(--text-1); background: var(--bg-hover); }

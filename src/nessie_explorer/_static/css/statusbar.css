@@ -1,0 +1,8 @@
+#statusbar { height:var(--statusbar-h); flex-shrink:0; display:flex; align-items:center; background:var(--bg-surface); border-top:1px solid var(--border); font-size:10.5px; color:var(--text-2); }
+.sb-item { display:flex; align-items:center; gap:5px; height:100%; padding:0 8px; white-space:nowrap; }
+.sb-sep { width:1px; height:14px; background:var(--border-bright); margin:0 1px; flex-shrink:0; }
+.sb-spacer { flex:1; }
+.sb-dot { width:5px; height:5px; border-radius:50%; background:var(--text-3); }
+.sb-dot.live { background:var(--green); box-shadow:0 0 5px var(--green); }
+.sb-acc { color:var(--accent); }
+.sb-grn { color:var(--green); }
