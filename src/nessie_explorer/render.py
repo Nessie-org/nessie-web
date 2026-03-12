@@ -83,7 +83,7 @@ def render(adapter: NessieAdapter) -> str:
             "id":          ws_id,
             "name":        name,
             "plugin_html": plugin_html,
-            "is_active":   is_active,
+            "is_active":   is_active
         })
 
     server_state: dict[str, Any] = {
@@ -105,4 +105,5 @@ def render(adapter: NessieAdapter) -> str:
         server_state_json=server_state,
         inline_css=inline_css,
         inline_js=inline_js,
+		plugin_name=adapter.get_visualiser_name_at(active_index),
     )

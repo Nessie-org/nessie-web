@@ -20,6 +20,9 @@ if __name__ == "__main__":
 			action = Action(name="visualise_graph", payload=self._graphs[i])
 			return self._plugin.handle(action)
 
+		def get_visualiser_name_at(self, i):
+			return self._plugin.name
+
 	from nessie_npm_dependencies_plugin import npm_dependencies_plugin
 	from neisse_graph_visualiser_block import neisse_graph_visualiser_block_plugin
 

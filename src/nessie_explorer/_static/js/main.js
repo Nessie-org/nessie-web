@@ -186,8 +186,6 @@ function switchWorkspace(id) {
     p.classList.toggle('active', p.dataset.wsId === id));
   const ws = getWs(id);
   if (ws) {
-    document.getElementById('plugin-name').textContent      = ws.pluginName;
-    document.getElementById('sb-plugin-label').textContent  = ws.pluginName;
     updateStatusBar(ws);
     if (ws.nodes.length) {
       setTimeout(() => {
@@ -239,7 +237,6 @@ function updateStatusBar(ws) {
     document.getElementById('sb-sel-id').textContent = ws.selectedId;
   } else sel.style.display='none';
   document.getElementById('btn-reload').disabled = !ws.graphData;
-  document.getElementById('plugin-name').textContent       = ws.pluginName;
   document.getElementById('sb-plugin-label').textContent   = ws.pluginName;
 }
 
