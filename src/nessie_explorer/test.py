@@ -1,7 +1,7 @@
 from sqlite3 import adapt
 
 if __name__ == "__main__":
-	from nessie_api.models import Edge, Action, Node, Attribute
+	from nessie_api.models import Edge, Action, Node, Attribute, FilterExpression, FilterOperator
 	from render import render
 
 
@@ -22,6 +22,12 @@ if __name__ == "__main__":
 
 		def get_visualiser_name_at(self, i):
 			return self._plugin.name
+
+		def get_active_filters_at(self, index: int) -> list:
+			return [
+				FilterExpression("test", FilterOperator.EQ, "value"),
+				FilterExpression("test2", FilterOperator.GT, "value2")
+			]
 
 	from nessie_npm_dependencies_plugin import npm_dependencies_plugin
 	from neisse_graph_visualiser_block import neisse_graph_visualiser_block_plugin

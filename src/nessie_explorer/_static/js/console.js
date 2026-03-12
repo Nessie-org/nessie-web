@@ -60,18 +60,8 @@ function handleConsoleInput(ws, raw) {
   }
   /* filter <attr> <op> <val> */
   if (/^filter\s+\S/.test(cmd)) {
-    const expr = raw.trim().slice(7).trim();
-    const m = expr.match(/^(\S+)\s*(==|!=|<=|>=|<|>)\s*(.+)$/);
-    if (m) {
-      const val = isNaN(m[3].trim()) ? m[3].trim() : parseFloat(m[3].trim());
-      ws.activeFilters.push({ attr: m[1], op: m[2], val, expr });
-      refreshFilterStack(ws);
-      applyFiltersToGraph(ws);
-      debouncedSave();
-      conLog(ws, `Filter: ${expr}`, 'ok');
-    } else {
-      conLog(ws, 'Syntax: filter &lt;attr&gt; &lt;op&gt; &lt;value&gt;', 'warn');
-    }
+    // TODO: send filter to backend
+    alert(`TODO: Apply filter — ${raw.trim().slice(7).trim()}`);
     return;
   }
 
@@ -89,7 +79,7 @@ function handleConsoleInput(ws, raw) {
       conLog(ws, `&nbsp;&nbsp;<span style="color:var(--text-1)">${c}</span>&nbsp;—&nbsp;${d}`, 'info')
     ),
     'fit':           () => { fitGraph(ws, true); conLog(ws, 'Fit to screen.', 'ok'); },
-    'clear filters': () => clearAllFilters(ws),
+    'clear filters': () => alert('TODO: Clear all filters'),
     'reset sim':     () => resetSim(ws),
     'clear storage': () => {
       localStorage.removeItem(LS_KEY);

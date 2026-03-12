@@ -68,7 +68,6 @@ function saveState() {
         id:            ws.id,
         simParams:     { ...ws.simParams },
         simRunning:    ws.simRunning,
-        activeFilters: ws.activeFilters.map(f => ({ ...f })),
         selectedId:    ws.selectedId,
         transform:     { x: ws.transform.x, y: ws.transform.y, k: ws.transform.k },
         layout:        readLayout(ws),
@@ -110,11 +109,6 @@ function restoreWorkspaceUiState(ws, saved) {
 
   /* Panel layout */
   applyLayout(ws, saved.layout);
-
-  /* Filters (applied after graph is loaded in main.js) */
-  if (saved.activeFilters?.length) {
-    ws._savedFilters = saved.activeFilters.map(f => ({ ...f }));
-  }
 
   /* Selected node (applied after graph is loaded in main.js) */
   if (saved.selectedId) ws._savedSelectedId = saved.selectedId;

@@ -54,8 +54,6 @@ function initWorkspace(spec, savedState) {
     conOutput:      null,
     filterStack:    null,
     filterBadge:    null,
-    filterBanner:   null,
-    filterBannerTxt:null,
     treeBody:       null,
     propsBody:      null,
     tab:            null,
@@ -80,15 +78,9 @@ function initWorkspace(spec, savedState) {
 
   /* Load the graph */
   if (ws.graphData) {
+    loadServerFilters(ws, ws.graphData);
     loadGraph(ws, ws.graphData);
 
-    /* Restore filters after graph build */
-    if (ws._savedFilters?.length) {
-      ws.activeFilters = ws._savedFilters;
-      delete ws._savedFilters;
-      refreshFilterStack(ws);
-      applyFiltersToGraph(ws);
-    }
     /* Restore selection */
     if (ws._savedSelectedId) {
       const exists = ws.nodes.find(n => n.id === ws._savedSelectedId);
@@ -129,8 +121,6 @@ function attachWorkspacePaneDOM(ws) {
   ws.conOutput       = pane.querySelector('.con-output');
   ws.filterStack     = pane.querySelector('.filter-stack');
   ws.filterBadge     = pane.querySelector('.btab-badge');
-  ws.filterBanner    = pane.querySelector('.filter-banner');
-  ws.filterBannerTxt = pane.querySelector('.filter-banner-txt');
   ws.treeBody        = pane.querySelector('.tree-body');
   ws.propsBody       = pane.querySelector('.props-body');
 
