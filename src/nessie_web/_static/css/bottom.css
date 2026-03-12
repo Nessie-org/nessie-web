@@ -36,6 +36,11 @@
 .filter-card { display:flex; align-items:center; gap:8px; padding:5px 10px; background:var(--bg-active); border:1px solid var(--border-bright); border-left:2px solid var(--accent); border-radius:var(--radius-sm); font-size:11px; animation:fadein .15s ease; }
 @keyframes fadein { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
 .fc-expr { flex:1; color:var(--text-1); }
-.fc-count { font-size:10px; color:var(--text-3); }
 .fc-rm { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:12px; width:16px; height:16px; display:flex; align-items:center; justify-content:center; border-radius:2px; transition:color var(--transition-fast),background var(--transition-fast); }
 .fc-rm:hover { color:var(--red); background:var(--red-dim); }
+
+/* Console input prompt rows */
+.con-input-row.con-line { cursor: pointer; }
+.con-input-row.con-line:hover { background: var(--bg-hover); color: var(--text-1); }
+.con-input-label { color: var(--accent); }
+.con-prompt-arrow { font-size: 8px; color: var(--accent); opacity: .7; margin-right: 2px; }

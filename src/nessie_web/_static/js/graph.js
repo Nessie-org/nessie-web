@@ -79,12 +79,12 @@ function loadGraph(ws, data) {
   ws.pane.querySelector('.graph-empty').style.display = 'none';
 
   const svgEl = ws.svgEl;
-  if (!svgEl) { conLog(ws, 'No SVG found.', 'warn'); return; }
+  if (!svgEl) return;
 
   const nodesContainer = svgEl.querySelector('#nodes');
   const edgesContainer = svgEl.querySelector('#edges');
 
-  if (!nodesContainer) { conLog(ws, 'No #nodes layer found in SVG.', 'warn'); return; }
+  if (!nodesContainer) return;
 
   /* ── Nodes: elements with [node] attribute ───────────────────── */
   ws.nodes = [...nodesContainer.querySelectorAll('[node]')].map((el, i) => {
@@ -121,7 +121,6 @@ function loadGraph(ws, data) {
       if (ws.id === activeWsId)
         document.getElementById('sb-zoom').textContent =
           Math.round(ev.transform.k * 100) + '%';
-      debouncedSave();
     });
   d3.select(svgEl).call(ws.zoom).on('dblclick.zoom', null);
   d3.select(svgEl).on('click', () => selectNode(ws, null));
@@ -179,7 +178,7 @@ function loadGraph(ws, data) {
     .alphaDecay(0.022)
     .velocityDecay(0.4)
     .on('tick', () => tick(ws))
-    .on('end',  () => { updateBirdview(ws); conLog(ws, 'Simulation settled.', 'ok'); });
+    .on('end',  () => { updateBirdview(ws); });
   if (!ws.simRunning) ws.sim.stop();
 
   setTimeout(() => fitGraph(ws, true), 900);
@@ -189,7 +188,6 @@ function loadGraph(ws, data) {
   if (ws.id === activeWsId) updateStatusBar(ws);
 
   buildTree(ws, data);
-  conLog(ws, `Loaded: ${ws.nodes.length} nodes, ${ws.edges.length} edges`, 'ok');
 }
 
 /* ── Tick ──────────────────────────────────────────────────────── */
@@ -270,7 +268,6 @@ function selectNode(ws, id) {
     else      sb.style.display = 'none';
   }
   updateBirdview(ws);
-  debouncedSave();
 }
 
 /* ── Hover highlight ────────────────────────────────────────────── */

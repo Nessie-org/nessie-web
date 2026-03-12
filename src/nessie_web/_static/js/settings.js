@@ -13,7 +13,6 @@ function wireSettingsControls(ws) {
   p.querySelector('.settings-hdr').addEventListener('click', () => {
     const open = p.querySelector('.settings-body').classList.toggle('open');
     p.querySelector('.settings-arrow').classList.toggle('open', open);
-    debouncedSave();
   });
 
   /* Link distance slider */
@@ -21,7 +20,6 @@ function wireSettingsControls(ws) {
     ws.simParams.link = +e.target.value;
     p.querySelector('.v-link').textContent = ws.simParams.link;
     reloadSim(ws);
-    debouncedSave();
   });
 
   /* Charge slider */
@@ -29,7 +27,6 @@ function wireSettingsControls(ws) {
     ws.simParams.charge = +e.target.value;
     p.querySelector('.v-charge').textContent = ws.simParams.charge;
     reloadSim(ws);
-    debouncedSave();
   });
 
   /* Collision padding slider */
@@ -37,7 +34,6 @@ function wireSettingsControls(ws) {
     ws.simParams.coll = +e.target.value;
     p.querySelector('.v-coll').textContent = ws.simParams.coll;
     reloadSim(ws);
-    debouncedSave();
   });
 
   /* Simulation on/off toggle */
@@ -45,7 +41,6 @@ function wireSettingsControls(ws) {
     ws.simRunning = !ws.simRunning;
     this.classList.toggle('on', ws.simRunning);
     if (ws.sim) ws.simRunning ? ws.sim.restart() : ws.sim.stop();
-    debouncedSave();
   });
 
   /* Reset button */
@@ -70,6 +65,5 @@ function resetSim(ws) {
   p.querySelector('.v-charge').textContent = DEFAULTS.charge;
   p.querySelector('.v-coll').textContent   = DEFAULTS.coll;
   reloadSim(ws);
-  debouncedSave();
   conLog(ws, 'Simulation reset to defaults.', 'ok');
 }

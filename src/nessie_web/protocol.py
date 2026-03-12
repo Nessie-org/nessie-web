@@ -1,5 +1,5 @@
 """
-nessie_explorer.protocol
+nessie_web.protocol
 ========================
 Jedini kontrakt koji host aplikacija mora da implementira.
 """
@@ -77,6 +77,15 @@ class NessieAdapter(Protocol):
 		Vraća listu FilterExpression objekata koji su trenutno aktivni za graf
 		na poziciji *index*. Svaki element mora imati metod .to_json() koji
 		vraća {"attr_name": str, "operator": str, "value": any}.
+		Default: prazna lista.
+		"""
+		return []
+
+	def get_console_messages_at(self, index: int) -> list:
+		"""
+		Vraća listu ConsoleMessage objekata koji će biti prikazani u konzoli
+		workspace-a pri prvom učitavanju. Svaki element mora imati metod
+		.to_json() koji vraća {"message": str, "type": "info"|"ok"|"warn"|"error"}.
 		Default: prazna lista.
 		"""
 		return []

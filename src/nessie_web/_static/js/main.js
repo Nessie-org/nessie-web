@@ -2,7 +2,6 @@
    main.js — Workspace manager and application init.
 
    Data source:  window.NESSIE_SERVER_STATE (injected by Python)
-   UI state:     localStorage via persistence.js
 
    window.NESSIE_SERVER_STATE = {
      activeWorkspaceIndex: 0,
@@ -29,7 +28,7 @@ function getWs(id)  { return workspaces.find(w => w.id === id); }
 function activeWs() { return getWs(activeWsId); }
 
 /* ── Create and register one workspace ─────────────────────── */
-function initWorkspace(spec, savedState) {
+function initWorkspace(spec) {
   const ws = {
     id:         spec.id,
     label:      spec.name,
@@ -66,8 +65,6 @@ function initWorkspace(spec, savedState) {
   attachWorkspaceTab(ws);
 
   /* Restore persisted UI state (sliders, layout, etc.) */
-  if (savedState) restoreWorkspaceUiState(ws, savedState);
-
   /* Wire all controls */
   wireConsoleControls(ws);
   wireFilterControls(ws);
@@ -79,30 +76,12 @@ function initWorkspace(spec, savedState) {
   /* Load the graph */
   if (ws.graphData) {
     loadServerFilters(ws, ws.graphData);
+    loadServerConsoleMessages(ws, ws.graphData);
     loadGraph(ws, ws.graphData);
 
     /* Restore selection */
-    if (ws._savedSelectedId) {
-      const exists = ws.nodes.find(n => n.id === ws._savedSelectedId);
-      if (exists) selectNode(ws, ws._savedSelectedId);
-      delete ws._savedSelectedId;
-    }
     /* Restore zoom (delayed so sim tick doesn't overwrite it) */
-    if (ws._savedTransform) {
-      const t = ws._savedTransform;
-      delete ws._savedTransform;
-      if (t.k !== 1) {
-        setTimeout(() => {
-          if (ws.zoom)
-            d3.select(ws.svgEl).call(
-              ws.zoom.transform,
-              d3.zoomIdentity.translate(t.x, t.y).scale(t.k)
-            );
-        }, 960);
-      }
-    }
   } else {
-    conLog(ws, 'No graph loaded.', 'info');
   }
 
   workspaces.push(ws);
@@ -137,6 +116,7 @@ function attachWorkspaceTab(ws) {
   tab.addEventListener('click', e => {
     if (e.target.classList.contains('ws-tab-close')) closeWorkspace(ws.id);
     // TODO: povezati na back — promena aktivnog workspace-a dolazi sa servera
+	  alert("Promena workspace-a")
   });
   ws.tab = tab;
 }
@@ -164,11 +144,13 @@ document.addEventListener('click', e => {
   const id = tab.dataset.tab;
   pane.querySelector(`.tab-pane[data-tab-id="${id}"]`)?.classList.add('active');
   const ws = workspaces.find(w => w.pane === pane);
-  if (ws) { ws._activeTab = id; debouncedSave(); }
+  if (ws) { ws._activeTab = id; }
 }, true);
 
 /* ── Switch active workspace ────────────────────────────────── */
 function switchWorkspace(id) {
+	// TODO: switch workspace
+	alert("Switching")
   activeWsId = id;
   document.querySelectorAll('.ws-tab').forEach(t =>
     t.classList.toggle('active', t.dataset.wsId === id));
@@ -205,7 +187,8 @@ function closeWorkspace(id) {
   ws.tab.remove();
   workspaces.splice(idx, 1);
   switchWorkspace(workspaces[Math.min(idx, workspaces.length-1)].id);
-  saveState();
+  // TODO: close workspace
+  alert("Close")
 }
 
 /* ── Status bar ─────────────────────────────────────────────── */
@@ -240,6 +223,7 @@ document.getElementById('plugin-chip').addEventListener('click', () => {
   alert('TODO: Plugin selector\n\nCurrent plugin: ' + (activeWs()?.pluginName || ''));
 });
 document.getElementById('ws-add').addEventListener('click', () => {
+	// TODO:  new workspace dialog
   alert('TODO: New workspace dialog');
 });
 document.getElementById('btn-settings-toggle').addEventListener('click', () => {
@@ -248,7 +232,6 @@ document.getElementById('btn-settings-toggle').addEventListener('click', () => {
   const arrow = ws.pane.querySelector('.settings-arrow');
   const open  = body.classList.toggle('open');
   arrow.classList.toggle('open', open);
-  debouncedSave();
 });
 
 /* ──────────────────────────────────────────────────────────────
@@ -256,14 +239,8 @@ document.getElementById('btn-settings-toggle').addEventListener('click', () => {
    ────────────────────────────────────────────────────────────── */
 (function init() {
   const server    = window.NESSIE_SERVER_STATE || {};
-  const persisted = loadPersistedState();
-
-  /* Build lookup: saved UI state by workspace id */
-  const savedById = {};
-  (persisted.workspaces || []).forEach(s => { savedById[s.id] = s; });
-
   (server.workspaces || []).forEach(spec => {
-    initWorkspace(spec, savedById[spec.id]);
+    initWorkspace(spec);
   });
 
   if (!workspaces.length) {
@@ -272,10 +249,9 @@ document.getElementById('btn-settings-toggle').addEventListener('click', () => {
   }
 
   /* Determine active workspace */
-  const targetId = (server.workspaces?.[server.activeWorkspaceIndex ?? 0]?.id)
-    || workspaces[0].id;
+  const targetId = server.workspaces?.[server.activeWorkspaceIndex ?? 0]?.id
+    ?? workspaces[0].id;
   const exists = workspaces.find(w => w.id === targetId);
   switchWorkspace(exists ? targetId : workspaces[0].id);
 
-  conLog(workspaces[0], 'Nessie Graph Explorer ready.', 'ok');
 })();

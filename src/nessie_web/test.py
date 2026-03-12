@@ -1,5 +1,7 @@
 from sqlite3 import adapt
 
+from nessie_api.models.console_message import ConsoleMessage, ConsoleMessageType
+
 if __name__ == "__main__":
 	from nessie_api.models import Edge, Action, Node, Attribute, FilterExpression, FilterOperator
 	from render import render
@@ -27,6 +29,25 @@ if __name__ == "__main__":
 			return [
 				FilterExpression("test", FilterOperator.EQ, "value"),
 				FilterExpression("test2", FilterOperator.GT, "value2")
+			]
+
+		def get_console_messages_at(self, index: int) -> list:
+			"""
+			Vraća listu ConsoleMessage objekata koji će biti prikazani u konzoli
+			workspace-a pri prvom učitavanju. Svaki element mora imati metod
+			.to_json() koji vraća {"message": str, "type": "info"|"ok"|"warn"|"error"}.
+			Default: prazna lista.
+			"""
+			return [
+				ConsoleMessage.info("This is an info message"),
+				ConsoleMessage.input("input 1"),
+				ConsoleMessage.warn("This is a warning message"),
+				ConsoleMessage.input("input 2"),
+				ConsoleMessage.error("This is an error message"),
+				ConsoleMessage.input("input 3"),
+				ConsoleMessage.ok("This is an ok message"),
+				ConsoleMessage.input("input 4"),
+				ConsoleMessage.warn("This is an warning message"),
 			]
 
 	from nessie_npm_dependencies_plugin import npm_dependencies_plugin

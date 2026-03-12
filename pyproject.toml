@@ -3,18 +3,42 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "nessie-explorer"
+name = "nessie-web"
 version = "0.1.0"
-description = "Framework-agnostic HTML renderer for the Nessie Graph Explorer UI"
+description = "Nessie plugin for rendering the UI in a web browser"
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = ["jinja2>=3.1"]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Mihajlo Milojević", email = "milojevicm374@gmail.com" },
+]
+keywords = ["nessie", "graph", "ui", "web", "plugin"]
+dependencies = [
+    "nessie-api>=0.1.0",
+    "jinja2>=3.1",
+]
 
-[project.optional-dependencies]
-dev = ["pytest>=7"]
+[project.urls]
+Repository = "https://github.com/Nessie-org/nessie-web"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/nessie_explorer"]
+packages = ["src/nessie_web"]
 
-[tool.hatch.build.targets.wheel.sources]
-"src" = ""
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.black]
+line-length = 88
+target-version = ["py39", "py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+ignore_missing_imports = true
