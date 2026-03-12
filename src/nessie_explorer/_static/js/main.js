@@ -146,7 +146,7 @@ function attachWorkspaceTab(ws) {
   if (!tab) { console.error('Nessie: tab not found for', ws.id); return; }
   tab.addEventListener('click', e => {
     if (e.target.classList.contains('ws-tab-close')) closeWorkspace(ws.id);
-    else switchWorkspace(ws.id);
+    // TODO: povezati na back — promena aktivnog workspace-a dolazi sa servera
   });
   ws.tab = tab;
 }
@@ -203,7 +203,6 @@ function switchWorkspace(id) {
       }, 50);
     }
   }
-  debouncedSave();
 }
 
 /* ── Close a workspace ──────────────────────────────────────── */
@@ -283,8 +282,7 @@ document.getElementById('btn-settings-toggle').addEventListener('click', () => {
   }
 
   /* Determine active workspace */
-  const targetId = persisted.activeWsId
-    || (server.workspaces?.[server.activeWorkspaceIndex ?? 0]?.id)
+  const targetId = (server.workspaces?.[server.activeWorkspaceIndex ?? 0]?.id)
     || workspaces[0].id;
   const exists = workspaces.find(w => w.id === targetId);
   switchWorkspace(exists ? targetId : workspaces[0].id);

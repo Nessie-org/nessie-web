@@ -64,7 +64,6 @@ function applyLayout(ws, layout) {
 function saveState() {
   try {
     const state = {
-      activeWsId,
       workspaces: workspaces.map(ws => ({
         id:            ws.id,
         simParams:     { ...ws.simParams },

@@ -352,6 +352,24 @@ body::before {
 .tree-dot   { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; opacity: .7; }
 .tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Component wrapper */
+.tree-component { margin-bottom: 4px; }
+
+/* Leaf spacer (no toggle) */
+.tree-leaf { width: 12px; flex-shrink: 0; }
+
+/* Cross-reference row */
+.tree-ref {
+  color: var(--text-3);
+  font-style: italic;
+}
+.tree-ref:hover { background: var(--bg-hover); color: var(--text-2); }
+
+.tree-ref-arrow {
+  font-size: 10px; width: 12px; flex-shrink: 0;
+  color: var(--accent); opacity: .6;
+}
+
 
 
 /* ── css/main-view.css ── */
@@ -591,7 +609,7 @@ body::before {
 
   <!-- ── Workspace Tab Bar ─────────────────────────────────────── -->
   <div id="wsbar">
-    <div class="ws-tab active" data-ws-id="ws-mysql">
+    <div class="ws-tab" data-ws-id="ws-mysql">
       <span class="ws-dot empty"></span>
       <span class="ws-tab-label">mysql</span>
       <span class="ws-tab-close" title="Close">✕</span>
@@ -601,7 +619,7 @@ body::before {
       <span class="ws-tab-label">axios</span>
       <span class="ws-tab-close" title="Close">✕</span>
     </div>
-    <div class="ws-tab" data-ws-id="ws-express">
+    <div class="ws-tab active" data-ws-id="ws-express">
       <span class="ws-dot empty"></span>
       <span class="ws-tab-label">express</span>
       <span class="ws-tab-close" title="Close">✕</span>
@@ -611,7 +629,7 @@ body::before {
 
   <!-- ── Workspace Content — server-rendered, scripts execute ──── -->
   <div id="ws-content">
-    <div class="ws-pane active" data-ws-id="ws-mysql">
+    <div class="ws-pane" data-ws-id="ws-mysql">
       <div class="layout">
 
         <!-- LEFT: Tree View -->
@@ -636,122 +654,7 @@ body::before {
         <div class="col col-center">
 
           <div class="main-view" style="flex:1;min-height:0">
-            <!-- ── Plugin HTML (active workspace only) ── -->
-            <svg id="main-view" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
-  <defs>
-    <marker id="arrowhead" markerWidth="8" markerHeight="6"
-      refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
-    </marker>
-  </defs>
-  <g id="edges"></g>
-  <g id="nodes"></g>
-</svg>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-
-<script>
-  alert("BLOCK VISUALISER");
-const GRAPH_DATA = {"name": "mysql", "type": "directed", "nodes": [{"id": "mysql", "attributes": {"version": "2.18.1", "description": "A node.js driver for mysql. It is written in JavaScript, does not require compiling, and is 100% MIT licensed.", "license": "MIT"}}, {"id": "bignumber.js", "attributes": {"version": "10.0.2", "description": "A library for arbitrary-precision decimal and non-decimal arithmetic", "license": "MIT"}}, {"id": "readable-stream", "attributes": {"version": "4.7.0", "description": "Node.js Streams, a user-land copy of the stream library from Node.js", "license": "MIT"}}, {"id": "safe-buffer", "attributes": {"version": "5.2.1", "description": "Safer Node.js Buffer API", "license": "MIT"}}, {"id": "sqlstring", "attributes": {"version": "2.3.3", "description": "Simple SQL escape and format for MySQL", "license": "MIT"}}, {"id": "abort-controller", "attributes": {"version": "3.0.0", "description": "An implementation of WHATWG AbortController interface.", "license": "MIT"}}, {"id": "buffer", "attributes": {"version": "6.0.3", "description": "Node.js Buffer API, for the browser", "license": "MIT"}}, {"id": "events", "attributes": {"version": "3.3.0", "description": "Node's event emitter for all engines.", "license": "MIT"}}, {"id": "process", "attributes": {"version": "0.11.10", "description": "process information for node.js and browsers", "license": "MIT"}}, {"id": "string_decoder", "attributes": {"version": "1.3.0", "description": "The string_decoder module from Node core", "license": "MIT"}}, {"id": "base64-js", "attributes": {"version": "1.5.1", "description": "Base64 encoding/decoding in pure JS", "license": "MIT"}}, {"id": "ieee754", "attributes": {"version": "1.2.1", "description": "Read/write IEEE754 floating point numbers from/to a Buffer or array-like object", "license": "BSD-3-Clause"}}, {"id": "event-target-shim", "attributes": {"version": "6.0.2", "description": "An implementation of WHATWG EventTarget interface.", "license": "MIT"}}], "edges": [{"id": "e0", "source": "mysql", "target": "bignumber.js", "attributes": {}}, {"id": "e1", "source": "mysql", "target": "readable-stream", "attributes": {}}, {"id": "e2", "source": "mysql", "target": "safe-buffer", "attributes": {}}, {"id": "e3", "source": "mysql", "target": "sqlstring", "attributes": {}}, {"id": "e4", "source": "readable-stream", "target": "abort-controller", "attributes": {}}, {"id": "e5", "source": "readable-stream", "target": "buffer", "attributes": {}}, {"id": "e6", "source": "readable-stream", "target": "events", "attributes": {}}, {"id": "e7", "source": "readable-stream", "target": "process", "attributes": {}}, {"id": "e8", "source": "readable-stream", "target": "string_decoder", "attributes": {}}, {"id": "e9", "source": "buffer", "target": "base64-js", "attributes": {}}, {"id": "e10", "source": "buffer", "target": "ieee754", "attributes": {}}, {"id": "e11", "source": "string_decoder", "target": "safe-buffer", "attributes": {}}, {"id": "e12", "source": "abort-controller", "target": "event-target-shim", "attributes": {}}]};
-
-const ROW_H   = 20;
-const PADDING = 12;
-const W       = window.innerWidth  || 0;
-const H       = window.innerHeight || 0;
-
-const layerEdges = d3.select('#edges');
-const layerNodes = d3.select('#nodes');
-const nodeMap    = {};
-
-/* give each node a random start position */
-GRAPH_DATA.nodes.forEach((n, i) => {
-  n.x = Math.random() * W * 0.7 + W * 0.1;
-  n.y = Math.random() * H * 0.7 + H * 0.1;
-});
-
-/* ── build node groups ───────────────────────────────────────────── */
-const nodeGroups = layerNodes.selectAll('.node')
-  .data(GRAPH_DATA.nodes)
-  .join('g')
-  .attr('class',     'node')
-  .attr('node',      '')            /* CONTRACT: physics finds nodes by this */
-  .attr('transform', d => `translate(${d.x},${d.y})`);
-
-nodeGroups.each(function(d) {
-  const g     = d3.select(this);
-  const attrs = Object.entries(d.attributes || {});
-  const texts = [];
-
-  texts.push(
-    g.append('text')
-      .attr('font-size',   '13px')
-      .attr('font-weight', 'bold')
-      .attr('font-family', 'monospace')
-      .attr('fill',        '#ffffff')
-      .text(d.id)
-  );
-
-  attrs.forEach(([k, v]) => {
-    texts.push(
-      g.append('text')
-        .attr('font-size',   '11px')
-        .attr('font-family', 'monospace')
-        .attr('fill',        '#ffffff')
-        .text(`${k}: ${v}`)
-    );
-  });
-
-  let maxWidth = 0;
-  texts.forEach(t => {
-    const w = t.node().getBBox().width;
-    if (w > maxWidth) maxWidth = w;
-  });
-
-  const width  = maxWidth + PADDING * 2;
-  const height = texts.length * ROW_H + PADDING * 1.5;
-  d.width  = width;
-  d.height = height;
-
-  g.insert('rect', ':first-child')
-    .attr('width',        width)
-    .attr('height',       height)
-    .attr('rx',           4)
-    .attr('fill',         '#1e2130')
-    .attr('stroke',       '#3b82f6')
-    .attr('stroke-width', 1.5);
-
-  g.insert('rect', 'text')
-    .attr('width',  width)
-    .attr('height', ROW_H + 6)
-    .attr('rx',     4)
-    .attr('fill',   '#3b82f6');
-
-  texts.forEach((t, i) => {
-    t.attr('x', PADDING).attr('y', ROW_H + i * ROW_H);
-  });
-
-  nodeMap[d.id] = d;
-});
-
-
-const nodeIndex = {};
-GRAPH_DATA.nodes.forEach((n, i) => { nodeIndex[n.id] = i; });
-
-layerEdges.selectAll('.edge')
-  .data(GRAPH_DATA.edges)
-  .join('line')
-  .attr('edge', '')            /* CONTRACT: physics finds edges by this */
-  .attr('class',        'edge')
-  .attr('stroke',       '#475569')
-  .attr('stroke-width', 1.5)
-  .attr('marker-end',   'url(#arrowhead)')
-  .attr('data-source',  d => nodeIndex[d.source])  
-  .attr('data-target',  d => nodeIndex[d.target])  
-  .attr('x1', d => nodeMap[d.source].x + nodeMap[d.source].width  / 2)
-  .attr('y1', d => nodeMap[d.source].y + nodeMap[d.source].height / 2)
-  .attr('x2', d => nodeMap[d.target].x + nodeMap[d.target].width  / 2)
-  .attr('y2', d => nodeMap[d.target].y + nodeMap[d.target].height / 2);
-</script>
+            <!-- ── Inactive workspace — plugin HTML loaded on tab click (TODO) ── -->
 
             <div class="graph-empty">
               <div class="ei">⬡</div>
@@ -998,7 +901,7 @@ layerEdges.selectAll('.edge')
 
       </div><!-- /layout -->
     </div><!-- /ws-pane -->
-    <div class="ws-pane" data-ws-id="ws-express">
+    <div class="ws-pane active" data-ws-id="ws-express">
       <div class="layout">
 
         <!-- LEFT: Tree View -->
@@ -1023,7 +926,122 @@ layerEdges.selectAll('.edge')
         <div class="col col-center">
 
           <div class="main-view" style="flex:1;min-height:0">
-            <!-- ── Inactive workspace — plugin HTML loaded on tab click (TODO) ── -->
+            <!-- ── Plugin HTML (active workspace only) ── -->
+            <svg id="main-view" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6"
+      refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+  <g id="edges"></g>
+  <g id="nodes"></g>
+</svg>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+<script>
+  alert("BLOCK VISUALISER");
+const GRAPH_DATA = {"name": "express", "type": "directed", "nodes": [{"id": "express", "attributes": {"version": "5.2.1", "description": "Fast, unopinionated, minimalist web framework", "license": "MIT"}}, {"id": "qs", "attributes": {"version": "6.15.0", "description": "A querystring parser that supports nesting and arrays, with a depth limit", "license": "BSD-3-Clause"}}, {"id": "depd", "attributes": {"version": "2.0.0", "description": "Deprecate all the things", "license": "MIT"}}, {"id": "etag", "attributes": {"version": "1.8.1", "description": "Create simple HTTP ETags", "license": "MIT"}}, {"id": "once", "attributes": {"version": "1.4.0", "description": "Run a function exactly one time", "license": "ISC"}}, {"id": "send", "attributes": {"version": "1.2.1", "description": "Better streaming static file server with Range and conditional-GET support", "license": "MIT"}}, {"id": "vary", "attributes": {"version": "1.1.2", "description": "Manipulate the HTTP Vary header", "license": "MIT"}}, {"id": "debug", "attributes": {"version": "4.4.3", "description": "Lightweight debugging utility for Node.js and the browser", "license": "MIT"}}, {"id": "fresh", "attributes": {"version": "0.5.2", "description": "HTTP response freshness testing", "license": "MIT"}}, {"id": "cookie", "attributes": {"version": "1.1.1", "description": "HTTP server cookie parsing and serialization", "license": "MIT"}}, {"id": "router", "attributes": {"version": "2.2.0", "description": "Simple middleware-style router", "license": "MIT"}}, {"id": "accepts", "attributes": {"version": "1.3.8", "description": "Higher-level content negotiation", "license": "MIT"}}, {"id": "type-is", "attributes": {"version": "2.0.1", "description": "Infer the content-type of a request.", "license": "MIT"}}, {"id": "parseurl", "attributes": {"version": "1.3.3", "description": "parse a url with memoization", "license": "MIT"}}, {"id": "statuses", "attributes": {"version": "2.0.2", "description": "HTTP status utility", "license": "MIT"}}, {"id": "encodeurl", "attributes": {"version": "2.0.0", "description": "Encode a URL to a percent-encoded form, excluding already-encoded sequences", "license": "MIT"}}, {"id": "mime-types", "attributes": {"version": "3.0.2", "description": "The ultimate javascript content-type utility.", "license": "MIT"}}, {"id": "proxy-addr", "attributes": {"version": "2.0.7", "description": "Determine address of proxied request", "license": "MIT"}}, {"id": "body-parser", "attributes": {"version": "2.2.2", "description": "Node.js body parsing middleware", "license": "MIT"}}, {"id": "escape-html", "attributes": {"version": "1.0.3", "description": "Escape string for use in HTML", "license": "MIT"}}, {"id": "http-errors", "attributes": {"version": "2.0.1", "description": "Create HTTP error objects", "license": "MIT"}}, {"id": "on-finished", "attributes": {"version": "2.4.1", "description": "Execute a callback when a request closes, finishes, or errors", "license": "MIT"}}, {"id": "content-type", "attributes": {"version": "1.0.5", "description": "Create and parse HTTP Content-Type header", "license": "MIT"}}, {"id": "finalhandler", "attributes": {"version": "2.1.1", "description": "Node.js final http responder", "license": "MIT"}}, {"id": "range-parser", "attributes": {"version": "1.2.1", "description": "Range header field string parser", "license": "MIT"}}, {"id": "serve-static", "attributes": {"version": "2.2.1", "description": "Serve static files", "license": "MIT"}}, {"id": "cookie-signature", "attributes": {"version": "1.2.2", "description": "Sign and unsign cookies", "license": "MIT"}}, {"id": "merge-descriptors", "attributes": {"version": "2.0.0", "description": "Merge objects using their property descriptors", "license": "MIT"}}, {"id": "content-disposition", "attributes": {"version": "1.0.1", "description": "Create and parse Content-Disposition header", "license": "MIT"}}, {"id": "side-channel", "attributes": {"version": "1.1.0", "description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT"}}, {"id": "es-errors", "attributes": {"version": "1.3.0", "description": "A simple cache for a few of the JS Error constructors.", "license": "MIT"}}, {"id": "object-inspect", "attributes": {"version": "1.13.4", "description": "string representations of objects in node and the browser", "license": "MIT"}}, {"id": "side-channel-list", "attributes": {"version": "1.0.0", "description": "Store information about any JS value in a side channel, using a linked list", "license": "MIT"}}, {"id": "side-channel-map", "attributes": {"version": "1.0.1", "description": "Store information about any JS value in a side channel, using a Map", "license": "MIT"}}, {"id": "side-channel-weakmap", "attributes": {"version": "1.0.2", "description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT"}}, {"id": "call-bound", "attributes": {"version": "1.0.4", "description": "Robust call-bound JavaScript intrinsics, using `call-bind` and `get-intrinsic`.", "license": "MIT"}}, {"id": "get-intrinsic", "attributes": {"version": "1.3.0", "description": "Get and robustly cache all JS language-level intrinsics at first require time", "license": "MIT"}}, {"id": "ee-first", "attributes": {"version": "1.1.1", "description": "return the first event in a set of ee/event pairs", "license": "MIT"}}, {"id": "call-bind-apply-helpers", "attributes": {"version": "1.0.2", "description": "Helper functions around Function call/apply/bind, for use in `call-bind`", "license": "MIT"}}, {"id": "gopd", "attributes": {"version": "1.2.0", "description": "`Object.getOwnPropertyDescriptor`, but accounts for IE's broken implementation.", "license": "MIT"}}, {"id": "hasown", "attributes": {"version": "2.0.2", "description": "A robust, ES3 compatible, \"has own property\" predicate.", "license": "MIT"}}, {"id": "get-proto", "attributes": {"version": "1.0.1", "description": "Robustly get the [[Prototype]] of an object", "license": "MIT"}}, {"id": "has-symbols", "attributes": {"version": "1.1.0", "description": "Determine if the JS environment has Symbol support. Supports spec, or shams.", "license": "MIT"}}, {"id": "function-bind", "attributes": {"version": "1.1.2", "description": "Implementation of Function.prototype.bind", "license": "MIT"}}, {"id": "es-object-atoms", "attributes": {"version": "1.1.1", "description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible", "license": "MIT"}}, {"id": "math-intrinsics", "attributes": {"version": "1.1.0", "description": "ES Math-related intrinsics and helpers, robustly cached.", "license": "MIT"}}, {"id": "es-define-property", "attributes": {"version": "1.0.1", "description": "`Object.defineProperty`, but not IE 8's broken one.", "license": "MIT"}}, {"id": "inherits", "attributes": {"version": "2.0.4", "description": "Browser-friendly inheritance fully compatible with standard node.js inherits()", "license": "ISC"}}, {"id": "setprototypeof", "attributes": {"version": "1.2.0", "description": "A small polyfill for Object.setprototypeof", "license": "ISC"}}, {"id": "toidentifier", "attributes": {"version": "1.0.1", "description": "Convert a string of words to a JavaScript identifier", "license": "MIT"}}, {"id": "wrappy", "attributes": {"version": "1.0.2", "description": "Callback wrapping utility", "license": "ISC"}}, {"id": "bytes", "attributes": {"version": "3.1.2", "description": "Utility to parse a string bytes to bytes and vice-versa", "license": "MIT"}}, {"id": "iconv-lite", "attributes": {"version": "0.7.2", "description": "Convert character encodings in pure javascript.", "license": "MIT"}}, {"id": "raw-body", "attributes": {"version": "3.0.2", "description": "Get and validate the raw body of a readable stream.", "license": "MIT"}}, {"id": "safer-buffer", "attributes": {"version": "2.1.2", "description": "Modern Buffer API polyfill without footguns", "license": "MIT"}}, {"id": "unpipe", "attributes": {"version": "1.0.0", "description": "Unpipe a stream from all destinations", "license": "MIT"}}, {"id": "forwarded", "attributes": {"version": "0.2.0", "description": "Parse HTTP X-Forwarded-For header", "license": "MIT"}}, {"id": "ipaddr.js", "attributes": {"version": "2.3.0", "description": "A library for manipulating IPv4 and IPv6 addresses in JavaScript.", "license": "MIT"}}, {"id": "negotiator", "attributes": {"version": "1.0.0", "description": "HTTP content negotiation", "license": "MIT"}}, {"id": "ms", "attributes": {"version": "2.1.3", "description": "Tiny millisecond conversion utility", "license": "MIT"}}, {"id": "media-typer", "attributes": {"version": "1.1.0", "description": "Simple RFC 6838 media type parser and formatter", "license": "MIT"}}, {"id": "mime-db", "attributes": {"version": "1.54.0", "description": "Media Type Database", "license": "MIT"}}, {"id": "dunder-proto", "attributes": {"version": "1.0.1", "description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound", "license": "MIT"}}, {"id": "is-promise", "attributes": {"version": "4.0.0", "description": "Test whether an object looks like a promises-a+ promise", "license": "MIT"}}, {"id": "path-to-regexp", "attributes": {"version": "8.3.0", "description": "Express style path to RegExp utility", "license": "MIT"}}, {"id": "A", "attributes": {"label": "Node A"}}, {"id": "B", "attributes": {"label": "Node B"}}, {"id": "C", "attributes": {"label": "Node C"}}], "edges": [{"id": "e0", "source": "express", "target": "qs", "attributes": {}}, {"id": "e1", "source": "express", "target": "depd", "attributes": {}}, {"id": "e2", "source": "express", "target": "etag", "attributes": {}}, {"id": "e3", "source": "express", "target": "once", "attributes": {}}, {"id": "e4", "source": "express", "target": "send", "attributes": {}}, {"id": "e5", "source": "express", "target": "vary", "attributes": {}}, {"id": "e6", "source": "express", "target": "debug", "attributes": {}}, {"id": "e7", "source": "express", "target": "fresh", "attributes": {}}, {"id": "e8", "source": "express", "target": "cookie", "attributes": {}}, {"id": "e9", "source": "express", "target": "router", "attributes": {}}, {"id": "e10", "source": "express", "target": "accepts", "attributes": {}}, {"id": "e11", "source": "express", "target": "type-is", "attributes": {}}, {"id": "e12", "source": "express", "target": "parseurl", "attributes": {}}, {"id": "e13", "source": "express", "target": "statuses", "attributes": {}}, {"id": "e14", "source": "express", "target": "encodeurl", "attributes": {}}, {"id": "e15", "source": "express", "target": "mime-types", "attributes": {}}, {"id": "e16", "source": "express", "target": "proxy-addr", "attributes": {}}, {"id": "e17", "source": "express", "target": "body-parser", "attributes": {}}, {"id": "e18", "source": "express", "target": "escape-html", "attributes": {}}, {"id": "e19", "source": "express", "target": "http-errors", "attributes": {}}, {"id": "e20", "source": "express", "target": "on-finished", "attributes": {}}, {"id": "e21", "source": "express", "target": "content-type", "attributes": {}}, {"id": "e22", "source": "express", "target": "finalhandler", "attributes": {}}, {"id": "e23", "source": "express", "target": "range-parser", "attributes": {}}, {"id": "e24", "source": "express", "target": "serve-static", "attributes": {}}, {"id": "e25", "source": "express", "target": "cookie-signature", "attributes": {}}, {"id": "e26", "source": "express", "target": "merge-descriptors", "attributes": {}}, {"id": "e27", "source": "express", "target": "content-disposition", "attributes": {}}, {"id": "e28", "source": "qs", "target": "side-channel", "attributes": {}}, {"id": "e29", "source": "side-channel", "target": "es-errors", "attributes": {}}, {"id": "e30", "source": "side-channel", "target": "object-inspect", "attributes": {}}, {"id": "e31", "source": "side-channel", "target": "side-channel-list", "attributes": {}}, {"id": "e32", "source": "side-channel", "target": "side-channel-map", "attributes": {}}, {"id": "e33", "source": "side-channel", "target": "side-channel-weakmap", "attributes": {}}, {"id": "e34", "source": "side-channel-map", "target": "call-bound", "attributes": {}}, {"id": "e35", "source": "side-channel-map", "target": "es-errors", "attributes": {}}, {"id": "e36", "source": "side-channel-map", "target": "get-intrinsic", "attributes": {}}, {"id": "e37", "source": "side-channel-map", "target": "object-inspect", "attributes": {}}, {"id": "e38", "source": "on-finished", "target": "ee-first", "attributes": {}}, {"id": "e39", "source": "call-bound", "target": "call-bind-apply-helpers", "attributes": {}}, {"id": "e40", "source": "call-bound", "target": "get-intrinsic", "attributes": {}}, {"id": "e41", "source": "get-intrinsic", "target": "gopd", "attributes": {}}, {"id": "e42", "source": "get-intrinsic", "target": "hasown", "attributes": {}}, {"id": "e43", "source": "get-intrinsic", "target": "es-errors", "attributes": {}}, {"id": "e44", "source": "get-intrinsic", "target": "get-proto", "attributes": {}}, {"id": "e45", "source": "get-intrinsic", "target": "has-symbols", "attributes": {}}, {"id": "e46", "source": "get-intrinsic", "target": "function-bind", "attributes": {}}, {"id": "e47", "source": "get-intrinsic", "target": "es-object-atoms", "attributes": {}}, {"id": "e48", "source": "get-intrinsic", "target": "math-intrinsics", "attributes": {}}, {"id": "e49", "source": "get-intrinsic", "target": "es-define-property", "attributes": {}}, {"id": "e50", "source": "get-intrinsic", "target": "call-bind-apply-helpers", "attributes": {}}, {"id": "e51", "source": "serve-static", "target": "encodeurl", "attributes": {}}, {"id": "e52", "source": "serve-static", "target": "escape-html", "attributes": {}}, {"id": "e53", "source": "serve-static", "target": "parseurl", "attributes": {}}, {"id": "e54", "source": "serve-static", "target": "send", "attributes": {}}, {"id": "e55", "source": "http-errors", "target": "depd", "attributes": {}}, {"id": "e56", "source": "http-errors", "target": "inherits", "attributes": {}}, {"id": "e57", "source": "http-errors", "target": "setprototypeof", "attributes": {}}, {"id": "e58", "source": "http-errors", "target": "statuses", "attributes": {}}, {"id": "e59", "source": "http-errors", "target": "toidentifier", "attributes": {}}, {"id": "e60", "source": "hasown", "target": "function-bind", "attributes": {}}, {"id": "e61", "source": "call-bind-apply-helpers", "target": "es-errors", "attributes": {}}, {"id": "e62", "source": "call-bind-apply-helpers", "target": "function-bind", "attributes": {}}, {"id": "e63", "source": "es-object-atoms", "target": "es-errors", "attributes": {}}, {"id": "e64", "source": "once", "target": "wrappy", "attributes": {}}, {"id": "e65", "source": "body-parser", "target": "bytes", "attributes": {}}, {"id": "e66", "source": "body-parser", "target": "content-type", "attributes": {}}, {"id": "e67", "source": "body-parser", "target": "debug", "attributes": {}}, {"id": "e68", "source": "body-parser", "target": "http-errors", "attributes": {}}, {"id": "e69", "source": "body-parser", "target": "iconv-lite", "attributes": {}}, {"id": "e70", "source": "body-parser", "target": "on-finished", "attributes": {}}, {"id": "e71", "source": "body-parser", "target": "qs", "attributes": {}}, {"id": "e72", "source": "body-parser", "target": "raw-body", "attributes": {}}, {"id": "e73", "source": "body-parser", "target": "type-is", "attributes": {}}, {"id": "e74", "source": "iconv-lite", "target": "safer-buffer", "attributes": {}}, {"id": "e75", "source": "raw-body", "target": "bytes", "attributes": {}}, {"id": "e76", "source": "raw-body", "target": "unpipe", "attributes": {}}, {"id": "e77", "source": "raw-body", "target": "iconv-lite", "attributes": {}}, {"id": "e78", "source": "raw-body", "target": "http-errors", "attributes": {}}, {"id": "e79", "source": "side-channel-weakmap", "target": "call-bound", "attributes": {}}, {"id": "e80", "source": "side-channel-weakmap", "target": "es-errors", "attributes": {}}, {"id": "e81", "source": "side-channel-weakmap", "target": "get-intrinsic", "attributes": {}}, {"id": "e82", "source": "side-channel-weakmap", "target": "object-inspect", "attributes": {}}, {"id": "e83", "source": "side-channel-weakmap", "target": "side-channel-map", "attributes": {}}, {"id": "e84", "source": "finalhandler", "target": "debug", "attributes": {}}, {"id": "e85", "source": "finalhandler", "target": "encodeurl", "attributes": {}}, {"id": "e86", "source": "finalhandler", "target": "escape-html", "attributes": {}}, {"id": "e87", "source": "finalhandler", "target": "on-finished", "attributes": {}}, {"id": "e88", "source": "finalhandler", "target": "parseurl", "attributes": {}}, {"id": "e89", "source": "finalhandler", "target": "statuses", "attributes": {}}, {"id": "e90", "source": "proxy-addr", "target": "forwarded", "attributes": {}}, {"id": "e91", "source": "proxy-addr", "target": "ipaddr.js", "attributes": {}}, {"id": "e92", "source": "accepts", "target": "mime-types", "attributes": {}}, {"id": "e93", "source": "accepts", "target": "negotiator", "attributes": {}}, {"id": "e94", "source": "debug", "target": "ms", "attributes": {}}, {"id": "e95", "source": "send", "target": "debug", "attributes": {}}, {"id": "e96", "source": "send", "target": "encodeurl", "attributes": {}}, {"id": "e97", "source": "send", "target": "escape-html", "attributes": {}}, {"id": "e98", "source": "send", "target": "etag", "attributes": {}}, {"id": "e99", "source": "send", "target": "fresh", "attributes": {}}, {"id": "e100", "source": "send", "target": "http-errors", "attributes": {}}, {"id": "e101", "source": "send", "target": "mime-types", "attributes": {}}, {"id": "e102", "source": "send", "target": "ms", "attributes": {}}, {"id": "e103", "source": "send", "target": "on-finished", "attributes": {}}, {"id": "e104", "source": "send", "target": "range-parser", "attributes": {}}, {"id": "e105", "source": "send", "target": "statuses", "attributes": {}}, {"id": "e106", "source": "type-is", "target": "content-type", "attributes": {}}, {"id": "e107", "source": "type-is", "target": "media-typer", "attributes": {}}, {"id": "e108", "source": "type-is", "target": "mime-types", "attributes": {}}, {"id": "e109", "source": "side-channel-list", "target": "es-errors", "attributes": {}}, {"id": "e110", "source": "side-channel-list", "target": "object-inspect", "attributes": {}}, {"id": "e111", "source": "mime-types", "target": "mime-db", "attributes": {}}, {"id": "e112", "source": "get-proto", "target": "dunder-proto", "attributes": {}}, {"id": "e113", "source": "get-proto", "target": "es-object-atoms", "attributes": {}}, {"id": "e114", "source": "dunder-proto", "target": "call-bind-apply-helpers", "attributes": {}}, {"id": "e115", "source": "dunder-proto", "target": "es-errors", "attributes": {}}, {"id": "e116", "source": "dunder-proto", "target": "gopd", "attributes": {}}, {"id": "e117", "source": "router", "target": "debug", "attributes": {}}, {"id": "e118", "source": "router", "target": "depd", "attributes": {}}, {"id": "e119", "source": "router", "target": "is-promise", "attributes": {}}, {"id": "e120", "source": "router", "target": "parseurl", "attributes": {}}, {"id": "e121", "source": "router", "target": "path-to-regexp", "attributes": {}}, {"id": "edge2", "source": "A", "target": "B", "attributes": {}}, {"id": "edge3", "source": "B", "target": "C", "attributes": {}}]};
+
+const ROW_H   = 20;
+const PADDING = 12;
+const W       = window.innerWidth  || 0;
+const H       = window.innerHeight || 0;
+
+const layerEdges = d3.select('#edges');
+const layerNodes = d3.select('#nodes');
+const nodeMap    = {};
+
+/* give each node a random start position */
+GRAPH_DATA.nodes.forEach((n, i) => {
+  n.x = Math.random() * W * 0.7 + W * 0.1;
+  n.y = Math.random() * H * 0.7 + H * 0.1;
+});
+
+/* ── build node groups ───────────────────────────────────────────── */
+const nodeGroups = layerNodes.selectAll('.node')
+  .data(GRAPH_DATA.nodes)
+  .join('g')
+  .attr('class',     'node')
+  .attr('node',      '')            /* CONTRACT: physics finds nodes by this */
+  .attr('transform', d => `translate(${d.x},${d.y})`);
+
+nodeGroups.each(function(d) {
+  const g     = d3.select(this);
+  const attrs = Object.entries(d.attributes || {});
+  const texts = [];
+
+  texts.push(
+    g.append('text')
+      .attr('font-size',   '13px')
+      .attr('font-weight', 'bold')
+      .attr('font-family', 'monospace')
+      .attr('fill',        '#ffffff')
+      .text(d.id)
+  );
+
+  attrs.forEach(([k, v]) => {
+    texts.push(
+      g.append('text')
+        .attr('font-size',   '11px')
+        .attr('font-family', 'monospace')
+        .attr('fill',        '#ffffff')
+        .text(`${k}: ${v}`)
+    );
+  });
+
+  let maxWidth = 0;
+  texts.forEach(t => {
+    const w = t.node().getBBox().width;
+    if (w > maxWidth) maxWidth = w;
+  });
+
+  const width  = maxWidth + PADDING * 2;
+  const height = texts.length * ROW_H + PADDING * 1.5;
+  d.width  = width;
+  d.height = height;
+
+  g.insert('rect', ':first-child')
+    .attr('width',        width)
+    .attr('height',       height)
+    .attr('rx',           4)
+    .attr('fill',         '#1e2130')
+    .attr('stroke',       '#3b82f6')
+    .attr('stroke-width', 1.5);
+
+  g.insert('rect', 'text')
+    .attr('width',  width)
+    .attr('height', ROW_H + 6)
+    .attr('rx',     4)
+    .attr('fill',   '#3b82f6');
+
+  texts.forEach((t, i) => {
+    t.attr('x', PADDING).attr('y', ROW_H + i * ROW_H);
+  });
+
+  nodeMap[d.id] = d;
+});
+
+
+const nodeIndex = {};
+GRAPH_DATA.nodes.forEach((n, i) => { nodeIndex[n.id] = i; });
+
+layerEdges.selectAll('.edge')
+  .data(GRAPH_DATA.edges)
+  .join('line')
+  .attr('edge', '')            /* CONTRACT: physics finds edges by this */
+  .attr('class',        'edge')
+  .attr('stroke',       '#475569')
+  .attr('stroke-width', 1.5)
+  .attr('marker-end',   'url(#arrowhead)')
+  .attr('data-source',  d => nodeIndex[d.source])  
+  .attr('data-target',  d => nodeIndex[d.target])  
+  .attr('x1', d => nodeMap[d.source].x + nodeMap[d.source].width  / 2)
+  .attr('y1', d => nodeMap[d.source].y + nodeMap[d.source].height / 2)
+  .attr('x2', d => nodeMap[d.target].x + nodeMap[d.target].width  / 2)
+  .attr('y2', d => nodeMap[d.target].y + nodeMap[d.target].height / 2);
+</script>
 
             <div class="graph-empty">
               <div class="ei">⬡</div>
@@ -1168,7 +1186,7 @@ layerEdges.selectAll('.edge')
 
 <!-- ── Server-injected state ─────────────────────────────────── -->
 <script>
-window.NESSIE_SERVER_STATE = {"activeWorkspaceIndex": 0, "workspaces": [{"graphData": {"edges": [{"attributes": {}, "id": "e0", "source": "mysql", "target": "bignumber.js"}, {"attributes": {}, "id": "e1", "source": "mysql", "target": "readable-stream"}, {"attributes": {}, "id": "e2", "source": "mysql", "target": "safe-buffer"}, {"attributes": {}, "id": "e3", "source": "mysql", "target": "sqlstring"}, {"attributes": {}, "id": "e4", "source": "readable-stream", "target": "abort-controller"}, {"attributes": {}, "id": "e5", "source": "readable-stream", "target": "buffer"}, {"attributes": {}, "id": "e6", "source": "readable-stream", "target": "events"}, {"attributes": {}, "id": "e7", "source": "readable-stream", "target": "process"}, {"attributes": {}, "id": "e8", "source": "readable-stream", "target": "string_decoder"}, {"attributes": {}, "id": "e9", "source": "buffer", "target": "base64-js"}, {"attributes": {}, "id": "e10", "source": "buffer", "target": "ieee754"}, {"attributes": {}, "id": "e11", "source": "string_decoder", "target": "safe-buffer"}, {"attributes": {}, "id": "e12", "source": "abort-controller", "target": "event-target-shim"}], "name": "mysql", "nodes": [{"attributes": {"description": "A node.js driver for mysql. It is written in JavaScript, does not require compiling, and is 100% MIT licensed.", "license": "MIT", "version": "2.18.1"}, "id": "mysql"}, {"attributes": {"description": "A library for arbitrary-precision decimal and non-decimal arithmetic", "license": "MIT", "version": "10.0.2"}, "id": "bignumber.js"}, {"attributes": {"description": "Node.js Streams, a user-land copy of the stream library from Node.js", "license": "MIT", "version": "4.7.0"}, "id": "readable-stream"}, {"attributes": {"description": "Safer Node.js Buffer API", "license": "MIT", "version": "5.2.1"}, "id": "safe-buffer"}, {"attributes": {"description": "Simple SQL escape and format for MySQL", "license": "MIT", "version": "2.3.3"}, "id": "sqlstring"}, {"attributes": {"description": "An implementation of WHATWG AbortController interface.", "license": "MIT", "version": "3.0.0"}, "id": "abort-controller"}, {"attributes": {"description": "Node.js Buffer API, for the browser", "license": "MIT", "version": "6.0.3"}, "id": "buffer"}, {"attributes": {"description": "Node\u0027s event emitter for all engines.", "license": "MIT", "version": "3.3.0"}, "id": "events"}, {"attributes": {"description": "process information for node.js and browsers", "license": "MIT", "version": "0.11.10"}, "id": "process"}, {"attributes": {"description": "The string_decoder module from Node core", "license": "MIT", "version": "1.3.0"}, "id": "string_decoder"}, {"attributes": {"description": "Base64 encoding/decoding in pure JS", "license": "MIT", "version": "1.5.1"}, "id": "base64-js"}, {"attributes": {"description": "Read/write IEEE754 floating point numbers from/to a Buffer or array-like object", "license": "BSD-3-Clause", "version": "1.2.1"}, "id": "ieee754"}, {"attributes": {"description": "An implementation of WHATWG EventTarget interface.", "license": "MIT", "version": "6.0.2"}, "id": "event-target-shim"}], "type": "directed"}, "id": "ws-mysql", "name": "mysql"}, {"graphData": {"edges": [{"attributes": {}, "id": "e0", "source": "axios", "target": "follow-redirects"}, {"attributes": {}, "id": "e1", "source": "axios", "target": "form-data"}, {"attributes": {}, "id": "e2", "source": "axios", "target": "proxy-from-env"}, {"attributes": {}, "id": "e3", "source": "form-data", "target": "asynckit"}, {"attributes": {}, "id": "e4", "source": "form-data", "target": "combined-stream"}, {"attributes": {}, "id": "e5", "source": "form-data", "target": "es-set-tostringtag"}, {"attributes": {}, "id": "e6", "source": "form-data", "target": "hasown"}, {"attributes": {}, "id": "e7", "source": "form-data", "target": "mime-types"}, {"attributes": {}, "id": "e8", "source": "es-set-tostringtag", "target": "es-errors"}, {"attributes": {}, "id": "e9", "source": "es-set-tostringtag", "target": "get-intrinsic"}, {"attributes": {}, "id": "e10", "source": "es-set-tostringtag", "target": "has-tostringtag"}, {"attributes": {}, "id": "e11", "source": "es-set-tostringtag", "target": "hasown"}, {"attributes": {}, "id": "e12", "source": "combined-stream", "target": "delayed-stream"}, {"attributes": {}, "id": "e13", "source": "mime-types", "target": "mime-db"}, {"attributes": {}, "id": "e14", "source": "hasown", "target": "function-bind"}, {"attributes": {}, "id": "e15", "source": "has-tostringtag", "target": "has-symbols"}, {"attributes": {}, "id": "e16", "source": "get-intrinsic", "target": "gopd"}, {"attributes": {}, "id": "e17", "source": "get-intrinsic", "target": "hasown"}, {"attributes": {}, "id": "e18", "source": "get-intrinsic", "target": "es-errors"}, {"attributes": {}, "id": "e19", "source": "get-intrinsic", "target": "get-proto"}, {"attributes": {}, "id": "e20", "source": "get-intrinsic", "target": "has-symbols"}, {"attributes": {}, "id": "e21", "source": "get-intrinsic", "target": "function-bind"}, {"attributes": {}, "id": "e22", "source": "get-intrinsic", "target": "es-object-atoms"}, {"attributes": {}, "id": "e23", "source": "get-intrinsic", "target": "math-intrinsics"}, {"attributes": {}, "id": "e24", "source": "get-intrinsic", "target": "es-define-property"}, {"attributes": {}, "id": "e25", "source": "get-intrinsic", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e26", "source": "get-proto", "target": "dunder-proto"}, {"attributes": {}, "id": "e27", "source": "get-proto", "target": "es-object-atoms"}, {"attributes": {}, "id": "e28", "source": "dunder-proto", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e29", "source": "dunder-proto", "target": "es-errors"}, {"attributes": {}, "id": "e30", "source": "dunder-proto", "target": "gopd"}, {"attributes": {}, "id": "e31", "source": "es-object-atoms", "target": "es-errors"}, {"attributes": {}, "id": "e32", "source": "call-bind-apply-helpers", "target": "es-errors"}, {"attributes": {}, "id": "e33", "source": "call-bind-apply-helpers", "target": "function-bind"}], "name": "axios", "nodes": [{"attributes": {"description": "Promise based HTTP client for the browser and node.js", "license": "MIT", "version": "1.13.6"}, "id": "axios"}, {"attributes": {"description": "HTTP and HTTPS modules that follow redirects.", "license": "MIT", "version": "1.15.11"}, "id": "follow-redirects"}, {"attributes": {"description": "A library to create readable \"multipart/form-data\" streams. Can be used to submit forms and file uploads to other web applications.", "license": "MIT", "version": "4.0.5"}, "id": "form-data"}, {"attributes": {"description": "Offers getProxyForUrl to get the proxy URL for a URL, respecting the *_PROXY (e.g. HTTP_PROXY) and NO_PROXY environment variables.", "license": "MIT", "version": "2.0.0"}, "id": "proxy-from-env"}, {"attributes": {"description": "Minimal async jobs utility library, with streams support", "license": "MIT", "version": "0.5.0"}, "id": "asynckit"}, {"attributes": {"description": "A stream that emits multiple other streams one after another.", "license": "MIT", "version": "1.0.8"}, "id": "combined-stream"}, {"attributes": {"description": "A helper to optimistically set Symbol.toStringTag, when possible.", "license": "MIT", "version": "2.1.0"}, "id": "es-set-tostringtag"}, {"attributes": {"description": "A robust, ES3 compatible, \"has own property\" predicate.", "license": "MIT", "version": "2.0.2"}, "id": "hasown"}, {"attributes": {"description": "The ultimate javascript content-type utility.", "license": "MIT", "version": "3.0.2"}, "id": "mime-types"}, {"attributes": {"description": "A simple cache for a few of the JS Error constructors.", "license": "MIT", "version": "1.3.0"}, "id": "es-errors"}, {"attributes": {"description": "Get and robustly cache all JS language-level intrinsics at first require time", "license": "MIT", "version": "1.3.0"}, "id": "get-intrinsic"}, {"attributes": {"description": "Determine if the JS environment has `Symbol.toStringTag` support. Supports spec, or shams.", "license": "MIT", "version": "1.0.2"}, "id": "has-tostringtag"}, {"attributes": {"description": "Buffers events from a stream until you are ready to handle them.", "license": "MIT", "version": "1.0.0"}, "id": "delayed-stream"}, {"attributes": {"description": "Media Type Database", "license": "MIT", "version": "1.54.0"}, "id": "mime-db"}, {"attributes": {"description": "Implementation of Function.prototype.bind", "license": "MIT", "version": "1.1.2"}, "id": "function-bind"}, {"attributes": {"description": "Determine if the JS environment has Symbol support. Supports spec, or shams.", "license": "MIT", "version": "1.1.0"}, "id": "has-symbols"}, {"attributes": {"description": "`Object.getOwnPropertyDescriptor`, but accounts for IE\u0027s broken implementation.", "license": "MIT", "version": "1.2.0"}, "id": "gopd"}, {"attributes": {"description": "Robustly get the [[Prototype]] of an object", "license": "MIT", "version": "1.0.1"}, "id": "get-proto"}, {"attributes": {"description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible", "license": "MIT", "version": "1.1.1"}, "id": "es-object-atoms"}, {"attributes": {"description": "ES Math-related intrinsics and helpers, robustly cached.", "license": "MIT", "version": "1.1.0"}, "id": "math-intrinsics"}, {"attributes": {"description": "`Object.defineProperty`, but not IE 8\u0027s broken one.", "license": "MIT", "version": "1.0.1"}, "id": "es-define-property"}, {"attributes": {"description": "Helper functions around Function call/apply/bind, for use in `call-bind`", "license": "MIT", "version": "1.0.2"}, "id": "call-bind-apply-helpers"}, {"attributes": {"description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound", "license": "MIT", "version": "1.0.1"}, "id": "dunder-proto"}], "type": "directed"}, "id": "ws-axios", "name": "axios"}, {"graphData": {"edges": [{"attributes": {}, "id": "e0", "source": "express", "target": "qs"}, {"attributes": {}, "id": "e1", "source": "express", "target": "depd"}, {"attributes": {}, "id": "e2", "source": "express", "target": "etag"}, {"attributes": {}, "id": "e3", "source": "express", "target": "once"}, {"attributes": {}, "id": "e4", "source": "express", "target": "send"}, {"attributes": {}, "id": "e5", "source": "express", "target": "vary"}, {"attributes": {}, "id": "e6", "source": "express", "target": "debug"}, {"attributes": {}, "id": "e7", "source": "express", "target": "fresh"}, {"attributes": {}, "id": "e8", "source": "express", "target": "cookie"}, {"attributes": {}, "id": "e9", "source": "express", "target": "router"}, {"attributes": {}, "id": "e10", "source": "express", "target": "accepts"}, {"attributes": {}, "id": "e11", "source": "express", "target": "type-is"}, {"attributes": {}, "id": "e12", "source": "express", "target": "parseurl"}, {"attributes": {}, "id": "e13", "source": "express", "target": "statuses"}, {"attributes": {}, "id": "e14", "source": "express", "target": "encodeurl"}, {"attributes": {}, "id": "e15", "source": "express", "target": "mime-types"}, {"attributes": {}, "id": "e16", "source": "express", "target": "proxy-addr"}, {"attributes": {}, "id": "e17", "source": "express", "target": "body-parser"}, {"attributes": {}, "id": "e18", "source": "express", "target": "escape-html"}, {"attributes": {}, "id": "e19", "source": "express", "target": "http-errors"}, {"attributes": {}, "id": "e20", "source": "express", "target": "on-finished"}, {"attributes": {}, "id": "e21", "source": "express", "target": "content-type"}, {"attributes": {}, "id": "e22", "source": "express", "target": "finalhandler"}, {"attributes": {}, "id": "e23", "source": "express", "target": "range-parser"}, {"attributes": {}, "id": "e24", "source": "express", "target": "serve-static"}, {"attributes": {}, "id": "e25", "source": "express", "target": "cookie-signature"}, {"attributes": {}, "id": "e26", "source": "express", "target": "merge-descriptors"}, {"attributes": {}, "id": "e27", "source": "express", "target": "content-disposition"}, {"attributes": {}, "id": "e28", "source": "proxy-addr", "target": "forwarded"}, {"attributes": {}, "id": "e29", "source": "proxy-addr", "target": "ipaddr.js"}, {"attributes": {}, "id": "e30", "source": "once", "target": "wrappy"}, {"attributes": {}, "id": "e31", "source": "mime-types", "target": "mime-db"}, {"attributes": {}, "id": "e32", "source": "send", "target": "debug"}, {"attributes": {}, "id": "e33", "source": "send", "target": "encodeurl"}, {"attributes": {}, "id": "e34", "source": "send", "target": "escape-html"}, {"attributes": {}, "id": "e35", "source": "send", "target": "etag"}, {"attributes": {}, "id": "e36", "source": "send", "target": "fresh"}, {"attributes": {}, "id": "e37", "source": "send", "target": "http-errors"}, {"attributes": {}, "id": "e38", "source": "send", "target": "mime-types"}, {"attributes": {}, "id": "e39", "source": "send", "target": "ms"}, {"attributes": {}, "id": "e40", "source": "send", "target": "on-finished"}, {"attributes": {}, "id": "e41", "source": "send", "target": "range-parser"}, {"attributes": {}, "id": "e42", "source": "send", "target": "statuses"}, {"attributes": {}, "id": "e43", "source": "router", "target": "debug"}, {"attributes": {}, "id": "e44", "source": "router", "target": "depd"}, {"attributes": {}, "id": "e45", "source": "router", "target": "is-promise"}, {"attributes": {}, "id": "e46", "source": "router", "target": "parseurl"}, {"attributes": {}, "id": "e47", "source": "router", "target": "path-to-regexp"}, {"attributes": {}, "id": "e48", "source": "qs", "target": "side-channel"}, {"attributes": {}, "id": "e49", "source": "on-finished", "target": "ee-first"}, {"attributes": {}, "id": "e50", "source": "finalhandler", "target": "debug"}, {"attributes": {}, "id": "e51", "source": "finalhandler", "target": "encodeurl"}, {"attributes": {}, "id": "e52", "source": "finalhandler", "target": "escape-html"}, {"attributes": {}, "id": "e53", "source": "finalhandler", "target": "on-finished"}, {"attributes": {}, "id": "e54", "source": "finalhandler", "target": "parseurl"}, {"attributes": {}, "id": "e55", "source": "finalhandler", "target": "statuses"}, {"attributes": {}, "id": "e56", "source": "http-errors", "target": "depd"}, {"attributes": {}, "id": "e57", "source": "http-errors", "target": "inherits"}, {"attributes": {}, "id": "e58", "source": "http-errors", "target": "setprototypeof"}, {"attributes": {}, "id": "e59", "source": "http-errors", "target": "statuses"}, {"attributes": {}, "id": "e60", "source": "http-errors", "target": "toidentifier"}, {"attributes": {}, "id": "e61", "source": "debug", "target": "ms"}, {"attributes": {}, "id": "e62", "source": "body-parser", "target": "bytes"}, {"attributes": {}, "id": "e63", "source": "body-parser", "target": "content-type"}, {"attributes": {}, "id": "e64", "source": "body-parser", "target": "debug"}, {"attributes": {}, "id": "e65", "source": "body-parser", "target": "http-errors"}, {"attributes": {}, "id": "e66", "source": "body-parser", "target": "iconv-lite"}, {"attributes": {}, "id": "e67", "source": "body-parser", "target": "on-finished"}, {"attributes": {}, "id": "e68", "source": "body-parser", "target": "qs"}, {"attributes": {}, "id": "e69", "source": "body-parser", "target": "raw-body"}, {"attributes": {}, "id": "e70", "source": "body-parser", "target": "type-is"}, {"attributes": {}, "id": "e71", "source": "accepts", "target": "mime-types"}, {"attributes": {}, "id": "e72", "source": "accepts", "target": "negotiator"}, {"attributes": {}, "id": "e73", "source": "iconv-lite", "target": "safer-buffer"}, {"attributes": {}, "id": "e74", "source": "side-channel", "target": "es-errors"}, {"attributes": {}, "id": "e75", "source": "side-channel", "target": "object-inspect"}, {"attributes": {}, "id": "e76", "source": "side-channel", "target": "side-channel-list"}, {"attributes": {}, "id": "e77", "source": "side-channel", "target": "side-channel-map"}, {"attributes": {}, "id": "e78", "source": "side-channel", "target": "side-channel-weakmap"}, {"attributes": {}, "id": "e79", "source": "side-channel-list", "target": "es-errors"}, {"attributes": {}, "id": "e80", "source": "side-channel-list", "target": "object-inspect"}, {"attributes": {}, "id": "e81", "source": "side-channel-weakmap", "target": "call-bound"}, {"attributes": {}, "id": "e82", "source": "side-channel-weakmap", "target": "es-errors"}, {"attributes": {}, "id": "e83", "source": "side-channel-weakmap", "target": "get-intrinsic"}, {"attributes": {}, "id": "e84", "source": "side-channel-weakmap", "target": "object-inspect"}, {"attributes": {}, "id": "e85", "source": "side-channel-weakmap", "target": "side-channel-map"}, {"attributes": {}, "id": "e86", "source": "get-intrinsic", "target": "gopd"}, {"attributes": {}, "id": "e87", "source": "get-intrinsic", "target": "hasown"}, {"attributes": {}, "id": "e88", "source": "get-intrinsic", "target": "es-errors"}, {"attributes": {}, "id": "e89", "source": "get-intrinsic", "target": "get-proto"}, {"attributes": {}, "id": "e90", "source": "get-intrinsic", "target": "has-symbols"}, {"attributes": {}, "id": "e91", "source": "get-intrinsic", "target": "function-bind"}, {"attributes": {}, "id": "e92", "source": "get-intrinsic", "target": "es-object-atoms"}, {"attributes": {}, "id": "e93", "source": "get-intrinsic", "target": "math-intrinsics"}, {"attributes": {}, "id": "e94", "source": "get-intrinsic", "target": "es-define-property"}, {"attributes": {}, "id": "e95", "source": "get-intrinsic", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e96", "source": "raw-body", "target": "bytes"}, {"attributes": {}, "id": "e97", "source": "raw-body", "target": "unpipe"}, {"attributes": {}, "id": "e98", "source": "raw-body", "target": "iconv-lite"}, {"attributes": {}, "id": "e99", "source": "raw-body", "target": "http-errors"}, {"attributes": {}, "id": "e100", "source": "hasown", "target": "function-bind"}, {"attributes": {}, "id": "e101", "source": "call-bind-apply-helpers", "target": "es-errors"}, {"attributes": {}, "id": "e102", "source": "call-bind-apply-helpers", "target": "function-bind"}, {"attributes": {}, "id": "e103", "source": "get-proto", "target": "dunder-proto"}, {"attributes": {}, "id": "e104", "source": "get-proto", "target": "es-object-atoms"}, {"attributes": {}, "id": "e105", "source": "es-object-atoms", "target": "es-errors"}, {"attributes": {}, "id": "e106", "source": "dunder-proto", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e107", "source": "dunder-proto", "target": "es-errors"}, {"attributes": {}, "id": "e108", "source": "dunder-proto", "target": "gopd"}, {"attributes": {}, "id": "e109", "source": "serve-static", "target": "encodeurl"}, {"attributes": {}, "id": "e110", "source": "serve-static", "target": "escape-html"}, {"attributes": {}, "id": "e111", "source": "serve-static", "target": "parseurl"}, {"attributes": {}, "id": "e112", "source": "serve-static", "target": "send"}, {"attributes": {}, "id": "e113", "source": "type-is", "target": "content-type"}, {"attributes": {}, "id": "e114", "source": "type-is", "target": "media-typer"}, {"attributes": {}, "id": "e115", "source": "type-is", "target": "mime-types"}, {"attributes": {}, "id": "e116", "source": "side-channel-map", "target": "call-bound"}, {"attributes": {}, "id": "e117", "source": "side-channel-map", "target": "es-errors"}, {"attributes": {}, "id": "e118", "source": "side-channel-map", "target": "get-intrinsic"}, {"attributes": {}, "id": "e119", "source": "side-channel-map", "target": "object-inspect"}, {"attributes": {}, "id": "e120", "source": "call-bound", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e121", "source": "call-bound", "target": "get-intrinsic"}], "name": "express", "nodes": [{"attributes": {"description": "Fast, unopinionated, minimalist web framework", "license": "MIT", "version": "5.2.1"}, "id": "express"}, {"attributes": {"description": "A querystring parser that supports nesting and arrays, with a depth limit", "license": "BSD-3-Clause", "version": "6.15.0"}, "id": "qs"}, {"attributes": {"description": "Deprecate all the things", "license": "MIT", "version": "2.0.0"}, "id": "depd"}, {"attributes": {"description": "Create simple HTTP ETags", "license": "MIT", "version": "1.8.1"}, "id": "etag"}, {"attributes": {"description": "Run a function exactly one time", "license": "ISC", "version": "1.4.0"}, "id": "once"}, {"attributes": {"description": "Better streaming static file server with Range and conditional-GET support", "license": "MIT", "version": "1.2.1"}, "id": "send"}, {"attributes": {"description": "Manipulate the HTTP Vary header", "license": "MIT", "version": "1.1.2"}, "id": "vary"}, {"attributes": {"description": "Lightweight debugging utility for Node.js and the browser", "license": "MIT", "version": "4.4.3"}, "id": "debug"}, {"attributes": {"description": "HTTP response freshness testing", "license": "MIT", "version": "0.5.2"}, "id": "fresh"}, {"attributes": {"description": "HTTP server cookie parsing and serialization", "license": "MIT", "version": "1.1.1"}, "id": "cookie"}, {"attributes": {"description": "Simple middleware-style router", "license": "MIT", "version": "2.2.0"}, "id": "router"}, {"attributes": {"description": "Higher-level content negotiation", "license": "MIT", "version": "1.3.8"}, "id": "accepts"}, {"attributes": {"description": "Infer the content-type of a request.", "license": "MIT", "version": "2.0.1"}, "id": "type-is"}, {"attributes": {"description": "parse a url with memoization", "license": "MIT", "version": "1.3.3"}, "id": "parseurl"}, {"attributes": {"description": "HTTP status utility", "license": "MIT", "version": "2.0.2"}, "id": "statuses"}, {"attributes": {"description": "Encode a URL to a percent-encoded form, excluding already-encoded sequences", "license": "MIT", "version": "2.0.0"}, "id": "encodeurl"}, {"attributes": {"description": "The ultimate javascript content-type utility.", "license": "MIT", "version": "3.0.2"}, "id": "mime-types"}, {"attributes": {"description": "Determine address of proxied request", "license": "MIT", "version": "2.0.7"}, "id": "proxy-addr"}, {"attributes": {"description": "Node.js body parsing middleware", "license": "MIT", "version": "2.2.2"}, "id": "body-parser"}, {"attributes": {"description": "Escape string for use in HTML", "license": "MIT", "version": "1.0.3"}, "id": "escape-html"}, {"attributes": {"description": "Create HTTP error objects", "license": "MIT", "version": "2.0.1"}, "id": "http-errors"}, {"attributes": {"description": "Execute a callback when a request closes, finishes, or errors", "license": "MIT", "version": "2.4.1"}, "id": "on-finished"}, {"attributes": {"description": "Create and parse HTTP Content-Type header", "license": "MIT", "version": "1.0.5"}, "id": "content-type"}, {"attributes": {"description": "Node.js final http responder", "license": "MIT", "version": "2.1.1"}, "id": "finalhandler"}, {"attributes": {"description": "Range header field string parser", "license": "MIT", "version": "1.2.1"}, "id": "range-parser"}, {"attributes": {"description": "Serve static files", "license": "MIT", "version": "2.2.1"}, "id": "serve-static"}, {"attributes": {"description": "Sign and unsign cookies", "license": "MIT", "version": "1.2.2"}, "id": "cookie-signature"}, {"attributes": {"description": "Merge objects using their property descriptors", "license": "MIT", "version": "2.0.0"}, "id": "merge-descriptors"}, {"attributes": {"description": "Create and parse Content-Disposition header", "license": "MIT", "version": "1.0.1"}, "id": "content-disposition"}, {"attributes": {"description": "Parse HTTP X-Forwarded-For header", "license": "MIT", "version": "0.2.0"}, "id": "forwarded"}, {"attributes": {"description": "A library for manipulating IPv4 and IPv6 addresses in JavaScript.", "license": "MIT", "version": "2.3.0"}, "id": "ipaddr.js"}, {"attributes": {"description": "Callback wrapping utility", "license": "ISC", "version": "1.0.2"}, "id": "wrappy"}, {"attributes": {"description": "Media Type Database", "license": "MIT", "version": "1.54.0"}, "id": "mime-db"}, {"attributes": {"description": "Tiny millisecond conversion utility", "license": "MIT", "version": "2.1.3"}, "id": "ms"}, {"attributes": {"description": "Test whether an object looks like a promises-a+ promise", "license": "MIT", "version": "4.0.0"}, "id": "is-promise"}, {"attributes": {"description": "Express style path to RegExp utility", "license": "MIT", "version": "8.3.0"}, "id": "path-to-regexp"}, {"attributes": {"description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT", "version": "1.1.0"}, "id": "side-channel"}, {"attributes": {"description": "return the first event in a set of ee/event pairs", "license": "MIT", "version": "1.1.1"}, "id": "ee-first"}, {"attributes": {"description": "Browser-friendly inheritance fully compatible with standard node.js inherits()", "license": "ISC", "version": "2.0.4"}, "id": "inherits"}, {"attributes": {"description": "A small polyfill for Object.setprototypeof", "license": "ISC", "version": "1.2.0"}, "id": "setprototypeof"}, {"attributes": {"description": "Convert a string of words to a JavaScript identifier", "license": "MIT", "version": "1.0.1"}, "id": "toidentifier"}, {"attributes": {"description": "Utility to parse a string bytes to bytes and vice-versa", "license": "MIT", "version": "3.1.2"}, "id": "bytes"}, {"attributes": {"description": "Convert character encodings in pure javascript.", "license": "MIT", "version": "0.7.2"}, "id": "iconv-lite"}, {"attributes": {"description": "Get and validate the raw body of a readable stream.", "license": "MIT", "version": "3.0.2"}, "id": "raw-body"}, {"attributes": {"description": "HTTP content negotiation", "license": "MIT", "version": "1.0.0"}, "id": "negotiator"}, {"attributes": {"description": "Modern Buffer API polyfill without footguns", "license": "MIT", "version": "2.1.2"}, "id": "safer-buffer"}, {"attributes": {"description": "A simple cache for a few of the JS Error constructors.", "license": "MIT", "version": "1.3.0"}, "id": "es-errors"}, {"attributes": {"description": "string representations of objects in node and the browser", "license": "MIT", "version": "1.13.4"}, "id": "object-inspect"}, {"attributes": {"description": "Store information about any JS value in a side channel, using a linked list", "license": "MIT", "version": "1.0.0"}, "id": "side-channel-list"}, {"attributes": {"description": "Store information about any JS value in a side channel, using a Map", "license": "MIT", "version": "1.0.1"}, "id": "side-channel-map"}, {"attributes": {"description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT", "version": "1.0.2"}, "id": "side-channel-weakmap"}, {"attributes": {"description": "Robust call-bound JavaScript intrinsics, using `call-bind` and `get-intrinsic`.", "license": "MIT", "version": "1.0.4"}, "id": "call-bound"}, {"attributes": {"description": "Get and robustly cache all JS language-level intrinsics at first require time", "license": "MIT", "version": "1.3.0"}, "id": "get-intrinsic"}, {"attributes": {"description": "`Object.getOwnPropertyDescriptor`, but accounts for IE\u0027s broken implementation.", "license": "MIT", "version": "1.2.0"}, "id": "gopd"}, {"attributes": {"description": "A robust, ES3 compatible, \"has own property\" predicate.", "license": "MIT", "version": "2.0.2"}, "id": "hasown"}, {"attributes": {"description": "Robustly get the [[Prototype]] of an object", "license": "MIT", "version": "1.0.1"}, "id": "get-proto"}, {"attributes": {"description": "Determine if the JS environment has Symbol support. Supports spec, or shams.", "license": "MIT", "version": "1.1.0"}, "id": "has-symbols"}, {"attributes": {"description": "Implementation of Function.prototype.bind", "license": "MIT", "version": "1.1.2"}, "id": "function-bind"}, {"attributes": {"description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible", "license": "MIT", "version": "1.1.1"}, "id": "es-object-atoms"}, {"attributes": {"description": "ES Math-related intrinsics and helpers, robustly cached.", "license": "MIT", "version": "1.1.0"}, "id": "math-intrinsics"}, {"attributes": {"description": "`Object.defineProperty`, but not IE 8\u0027s broken one.", "license": "MIT", "version": "1.0.1"}, "id": "es-define-property"}, {"attributes": {"description": "Helper functions around Function call/apply/bind, for use in `call-bind`", "license": "MIT", "version": "1.0.2"}, "id": "call-bind-apply-helpers"}, {"attributes": {"description": "Unpipe a stream from all destinations", "license": "MIT", "version": "1.0.0"}, "id": "unpipe"}, {"attributes": {"description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound", "license": "MIT", "version": "1.0.1"}, "id": "dunder-proto"}, {"attributes": {"description": "Simple RFC 6838 media type parser and formatter", "license": "MIT", "version": "1.1.0"}, "id": "media-typer"}], "type": "directed"}, "id": "ws-express", "name": "express"}]};
+window.NESSIE_SERVER_STATE = {"activeWorkspaceIndex": 2, "workspaces": [{"graphData": {"edges": [{"attributes": {}, "id": "e0", "source": "mysql", "target": "bignumber.js"}, {"attributes": {}, "id": "e1", "source": "mysql", "target": "readable-stream"}, {"attributes": {}, "id": "e2", "source": "mysql", "target": "safe-buffer"}, {"attributes": {}, "id": "e3", "source": "mysql", "target": "sqlstring"}, {"attributes": {}, "id": "e4", "source": "readable-stream", "target": "abort-controller"}, {"attributes": {}, "id": "e5", "source": "readable-stream", "target": "buffer"}, {"attributes": {}, "id": "e6", "source": "readable-stream", "target": "events"}, {"attributes": {}, "id": "e7", "source": "readable-stream", "target": "process"}, {"attributes": {}, "id": "e8", "source": "readable-stream", "target": "string_decoder"}, {"attributes": {}, "id": "e9", "source": "abort-controller", "target": "event-target-shim"}, {"attributes": {}, "id": "e10", "source": "buffer", "target": "base64-js"}, {"attributes": {}, "id": "e11", "source": "buffer", "target": "ieee754"}, {"attributes": {}, "id": "e12", "source": "string_decoder", "target": "safe-buffer"}], "name": "mysql", "nodes": [{"attributes": {"description": "A node.js driver for mysql. It is written in JavaScript, does not require compiling, and is 100% MIT licensed.", "license": "MIT", "version": "2.18.1"}, "id": "mysql"}, {"attributes": {"description": "A library for arbitrary-precision decimal and non-decimal arithmetic", "license": "MIT", "version": "10.0.2"}, "id": "bignumber.js"}, {"attributes": {"description": "Node.js Streams, a user-land copy of the stream library from Node.js", "license": "MIT", "version": "4.7.0"}, "id": "readable-stream"}, {"attributes": {"description": "Safer Node.js Buffer API", "license": "MIT", "version": "5.2.1"}, "id": "safe-buffer"}, {"attributes": {"description": "Simple SQL escape and format for MySQL", "license": "MIT", "version": "2.3.3"}, "id": "sqlstring"}, {"attributes": {"description": "An implementation of WHATWG AbortController interface.", "license": "MIT", "version": "3.0.0"}, "id": "abort-controller"}, {"attributes": {"description": "Node.js Buffer API, for the browser", "license": "MIT", "version": "6.0.3"}, "id": "buffer"}, {"attributes": {"description": "Node\u0027s event emitter for all engines.", "license": "MIT", "version": "3.3.0"}, "id": "events"}, {"attributes": {"description": "process information for node.js and browsers", "license": "MIT", "version": "0.11.10"}, "id": "process"}, {"attributes": {"description": "The string_decoder module from Node core", "license": "MIT", "version": "1.3.0"}, "id": "string_decoder"}, {"attributes": {"description": "An implementation of WHATWG EventTarget interface.", "license": "MIT", "version": "6.0.2"}, "id": "event-target-shim"}, {"attributes": {"description": "Base64 encoding/decoding in pure JS", "license": "MIT", "version": "1.5.1"}, "id": "base64-js"}, {"attributes": {"description": "Read/write IEEE754 floating point numbers from/to a Buffer or array-like object", "license": "BSD-3-Clause", "version": "1.2.1"}, "id": "ieee754"}], "type": "directed"}, "id": "ws-mysql", "name": "mysql"}, {"graphData": {"edges": [{"attributes": {}, "id": "e0", "source": "axios", "target": "follow-redirects"}, {"attributes": {}, "id": "e1", "source": "axios", "target": "form-data"}, {"attributes": {}, "id": "e2", "source": "axios", "target": "proxy-from-env"}, {"attributes": {}, "id": "e3", "source": "form-data", "target": "asynckit"}, {"attributes": {}, "id": "e4", "source": "form-data", "target": "combined-stream"}, {"attributes": {}, "id": "e5", "source": "form-data", "target": "es-set-tostringtag"}, {"attributes": {}, "id": "e6", "source": "form-data", "target": "hasown"}, {"attributes": {}, "id": "e7", "source": "form-data", "target": "mime-types"}, {"attributes": {}, "id": "e8", "source": "es-set-tostringtag", "target": "es-errors"}, {"attributes": {}, "id": "e9", "source": "es-set-tostringtag", "target": "get-intrinsic"}, {"attributes": {}, "id": "e10", "source": "es-set-tostringtag", "target": "has-tostringtag"}, {"attributes": {}, "id": "e11", "source": "es-set-tostringtag", "target": "hasown"}, {"attributes": {}, "id": "e12", "source": "combined-stream", "target": "delayed-stream"}, {"attributes": {}, "id": "e13", "source": "mime-types", "target": "mime-db"}, {"attributes": {}, "id": "e14", "source": "has-tostringtag", "target": "has-symbols"}, {"attributes": {}, "id": "e15", "source": "get-intrinsic", "target": "gopd"}, {"attributes": {}, "id": "e16", "source": "get-intrinsic", "target": "hasown"}, {"attributes": {}, "id": "e17", "source": "get-intrinsic", "target": "es-errors"}, {"attributes": {}, "id": "e18", "source": "get-intrinsic", "target": "get-proto"}, {"attributes": {}, "id": "e19", "source": "get-intrinsic", "target": "has-symbols"}, {"attributes": {}, "id": "e20", "source": "get-intrinsic", "target": "function-bind"}, {"attributes": {}, "id": "e21", "source": "get-intrinsic", "target": "es-object-atoms"}, {"attributes": {}, "id": "e22", "source": "get-intrinsic", "target": "math-intrinsics"}, {"attributes": {}, "id": "e23", "source": "get-intrinsic", "target": "es-define-property"}, {"attributes": {}, "id": "e24", "source": "get-intrinsic", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e25", "source": "es-object-atoms", "target": "es-errors"}, {"attributes": {}, "id": "e26", "source": "call-bind-apply-helpers", "target": "es-errors"}, {"attributes": {}, "id": "e27", "source": "call-bind-apply-helpers", "target": "function-bind"}, {"attributes": {}, "id": "e28", "source": "hasown", "target": "function-bind"}, {"attributes": {}, "id": "e29", "source": "get-proto", "target": "dunder-proto"}, {"attributes": {}, "id": "e30", "source": "get-proto", "target": "es-object-atoms"}, {"attributes": {}, "id": "e31", "source": "dunder-proto", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e32", "source": "dunder-proto", "target": "es-errors"}, {"attributes": {}, "id": "e33", "source": "dunder-proto", "target": "gopd"}], "name": "axios", "nodes": [{"attributes": {"description": "Promise based HTTP client for the browser and node.js", "license": "MIT", "version": "1.13.6"}, "id": "axios"}, {"attributes": {"description": "HTTP and HTTPS modules that follow redirects.", "license": "MIT", "version": "1.15.11"}, "id": "follow-redirects"}, {"attributes": {"description": "A library to create readable \"multipart/form-data\" streams. Can be used to submit forms and file uploads to other web applications.", "license": "MIT", "version": "4.0.5"}, "id": "form-data"}, {"attributes": {"description": "Offers getProxyForUrl to get the proxy URL for a URL, respecting the *_PROXY (e.g. HTTP_PROXY) and NO_PROXY environment variables.", "license": "MIT", "version": "2.0.0"}, "id": "proxy-from-env"}, {"attributes": {"description": "Minimal async jobs utility library, with streams support", "license": "MIT", "version": "0.5.0"}, "id": "asynckit"}, {"attributes": {"description": "A stream that emits multiple other streams one after another.", "license": "MIT", "version": "1.0.8"}, "id": "combined-stream"}, {"attributes": {"description": "A helper to optimistically set Symbol.toStringTag, when possible.", "license": "MIT", "version": "2.1.0"}, "id": "es-set-tostringtag"}, {"attributes": {"description": "A robust, ES3 compatible, \"has own property\" predicate.", "license": "MIT", "version": "2.0.2"}, "id": "hasown"}, {"attributes": {"description": "The ultimate javascript content-type utility.", "license": "MIT", "version": "3.0.2"}, "id": "mime-types"}, {"attributes": {"description": "A simple cache for a few of the JS Error constructors.", "license": "MIT", "version": "1.3.0"}, "id": "es-errors"}, {"attributes": {"description": "Get and robustly cache all JS language-level intrinsics at first require time", "license": "MIT", "version": "1.3.0"}, "id": "get-intrinsic"}, {"attributes": {"description": "Determine if the JS environment has `Symbol.toStringTag` support. Supports spec, or shams.", "license": "MIT", "version": "1.0.2"}, "id": "has-tostringtag"}, {"attributes": {"description": "Buffers events from a stream until you are ready to handle them.", "license": "MIT", "version": "1.0.0"}, "id": "delayed-stream"}, {"attributes": {"description": "Media Type Database", "license": "MIT", "version": "1.54.0"}, "id": "mime-db"}, {"attributes": {"description": "Determine if the JS environment has Symbol support. Supports spec, or shams.", "license": "MIT", "version": "1.1.0"}, "id": "has-symbols"}, {"attributes": {"description": "`Object.getOwnPropertyDescriptor`, but accounts for IE\u0027s broken implementation.", "license": "MIT", "version": "1.2.0"}, "id": "gopd"}, {"attributes": {"description": "Robustly get the [[Prototype]] of an object", "license": "MIT", "version": "1.0.1"}, "id": "get-proto"}, {"attributes": {"description": "Implementation of Function.prototype.bind", "license": "MIT", "version": "1.1.2"}, "id": "function-bind"}, {"attributes": {"description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible", "license": "MIT", "version": "1.1.1"}, "id": "es-object-atoms"}, {"attributes": {"description": "ES Math-related intrinsics and helpers, robustly cached.", "license": "MIT", "version": "1.1.0"}, "id": "math-intrinsics"}, {"attributes": {"description": "`Object.defineProperty`, but not IE 8\u0027s broken one.", "license": "MIT", "version": "1.0.1"}, "id": "es-define-property"}, {"attributes": {"description": "Helper functions around Function call/apply/bind, for use in `call-bind`", "license": "MIT", "version": "1.0.2"}, "id": "call-bind-apply-helpers"}, {"attributes": {"description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound", "license": "MIT", "version": "1.0.1"}, "id": "dunder-proto"}], "type": "directed"}, "id": "ws-axios", "name": "axios"}, {"graphData": {"edges": [{"attributes": {}, "id": "e0", "source": "express", "target": "qs"}, {"attributes": {}, "id": "e1", "source": "express", "target": "depd"}, {"attributes": {}, "id": "e2", "source": "express", "target": "etag"}, {"attributes": {}, "id": "e3", "source": "express", "target": "once"}, {"attributes": {}, "id": "e4", "source": "express", "target": "send"}, {"attributes": {}, "id": "e5", "source": "express", "target": "vary"}, {"attributes": {}, "id": "e6", "source": "express", "target": "debug"}, {"attributes": {}, "id": "e7", "source": "express", "target": "fresh"}, {"attributes": {}, "id": "e8", "source": "express", "target": "cookie"}, {"attributes": {}, "id": "e9", "source": "express", "target": "router"}, {"attributes": {}, "id": "e10", "source": "express", "target": "accepts"}, {"attributes": {}, "id": "e11", "source": "express", "target": "type-is"}, {"attributes": {}, "id": "e12", "source": "express", "target": "parseurl"}, {"attributes": {}, "id": "e13", "source": "express", "target": "statuses"}, {"attributes": {}, "id": "e14", "source": "express", "target": "encodeurl"}, {"attributes": {}, "id": "e15", "source": "express", "target": "mime-types"}, {"attributes": {}, "id": "e16", "source": "express", "target": "proxy-addr"}, {"attributes": {}, "id": "e17", "source": "express", "target": "body-parser"}, {"attributes": {}, "id": "e18", "source": "express", "target": "escape-html"}, {"attributes": {}, "id": "e19", "source": "express", "target": "http-errors"}, {"attributes": {}, "id": "e20", "source": "express", "target": "on-finished"}, {"attributes": {}, "id": "e21", "source": "express", "target": "content-type"}, {"attributes": {}, "id": "e22", "source": "express", "target": "finalhandler"}, {"attributes": {}, "id": "e23", "source": "express", "target": "range-parser"}, {"attributes": {}, "id": "e24", "source": "express", "target": "serve-static"}, {"attributes": {}, "id": "e25", "source": "express", "target": "cookie-signature"}, {"attributes": {}, "id": "e26", "source": "express", "target": "merge-descriptors"}, {"attributes": {}, "id": "e27", "source": "express", "target": "content-disposition"}, {"attributes": {}, "id": "e28", "source": "qs", "target": "side-channel"}, {"attributes": {}, "id": "e29", "source": "side-channel", "target": "es-errors"}, {"attributes": {}, "id": "e30", "source": "side-channel", "target": "object-inspect"}, {"attributes": {}, "id": "e31", "source": "side-channel", "target": "side-channel-list"}, {"attributes": {}, "id": "e32", "source": "side-channel", "target": "side-channel-map"}, {"attributes": {}, "id": "e33", "source": "side-channel", "target": "side-channel-weakmap"}, {"attributes": {}, "id": "e34", "source": "side-channel-map", "target": "call-bound"}, {"attributes": {}, "id": "e35", "source": "side-channel-map", "target": "es-errors"}, {"attributes": {}, "id": "e36", "source": "side-channel-map", "target": "get-intrinsic"}, {"attributes": {}, "id": "e37", "source": "side-channel-map", "target": "object-inspect"}, {"attributes": {}, "id": "e38", "source": "on-finished", "target": "ee-first"}, {"attributes": {}, "id": "e39", "source": "call-bound", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e40", "source": "call-bound", "target": "get-intrinsic"}, {"attributes": {}, "id": "e41", "source": "get-intrinsic", "target": "gopd"}, {"attributes": {}, "id": "e42", "source": "get-intrinsic", "target": "hasown"}, {"attributes": {}, "id": "e43", "source": "get-intrinsic", "target": "es-errors"}, {"attributes": {}, "id": "e44", "source": "get-intrinsic", "target": "get-proto"}, {"attributes": {}, "id": "e45", "source": "get-intrinsic", "target": "has-symbols"}, {"attributes": {}, "id": "e46", "source": "get-intrinsic", "target": "function-bind"}, {"attributes": {}, "id": "e47", "source": "get-intrinsic", "target": "es-object-atoms"}, {"attributes": {}, "id": "e48", "source": "get-intrinsic", "target": "math-intrinsics"}, {"attributes": {}, "id": "e49", "source": "get-intrinsic", "target": "es-define-property"}, {"attributes": {}, "id": "e50", "source": "get-intrinsic", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e51", "source": "serve-static", "target": "encodeurl"}, {"attributes": {}, "id": "e52", "source": "serve-static", "target": "escape-html"}, {"attributes": {}, "id": "e53", "source": "serve-static", "target": "parseurl"}, {"attributes": {}, "id": "e54", "source": "serve-static", "target": "send"}, {"attributes": {}, "id": "e55", "source": "http-errors", "target": "depd"}, {"attributes": {}, "id": "e56", "source": "http-errors", "target": "inherits"}, {"attributes": {}, "id": "e57", "source": "http-errors", "target": "setprototypeof"}, {"attributes": {}, "id": "e58", "source": "http-errors", "target": "statuses"}, {"attributes": {}, "id": "e59", "source": "http-errors", "target": "toidentifier"}, {"attributes": {}, "id": "e60", "source": "hasown", "target": "function-bind"}, {"attributes": {}, "id": "e61", "source": "call-bind-apply-helpers", "target": "es-errors"}, {"attributes": {}, "id": "e62", "source": "call-bind-apply-helpers", "target": "function-bind"}, {"attributes": {}, "id": "e63", "source": "es-object-atoms", "target": "es-errors"}, {"attributes": {}, "id": "e64", "source": "once", "target": "wrappy"}, {"attributes": {}, "id": "e65", "source": "body-parser", "target": "bytes"}, {"attributes": {}, "id": "e66", "source": "body-parser", "target": "content-type"}, {"attributes": {}, "id": "e67", "source": "body-parser", "target": "debug"}, {"attributes": {}, "id": "e68", "source": "body-parser", "target": "http-errors"}, {"attributes": {}, "id": "e69", "source": "body-parser", "target": "iconv-lite"}, {"attributes": {}, "id": "e70", "source": "body-parser", "target": "on-finished"}, {"attributes": {}, "id": "e71", "source": "body-parser", "target": "qs"}, {"attributes": {}, "id": "e72", "source": "body-parser", "target": "raw-body"}, {"attributes": {}, "id": "e73", "source": "body-parser", "target": "type-is"}, {"attributes": {}, "id": "e74", "source": "iconv-lite", "target": "safer-buffer"}, {"attributes": {}, "id": "e75", "source": "raw-body", "target": "bytes"}, {"attributes": {}, "id": "e76", "source": "raw-body", "target": "unpipe"}, {"attributes": {}, "id": "e77", "source": "raw-body", "target": "iconv-lite"}, {"attributes": {}, "id": "e78", "source": "raw-body", "target": "http-errors"}, {"attributes": {}, "id": "e79", "source": "side-channel-weakmap", "target": "call-bound"}, {"attributes": {}, "id": "e80", "source": "side-channel-weakmap", "target": "es-errors"}, {"attributes": {}, "id": "e81", "source": "side-channel-weakmap", "target": "get-intrinsic"}, {"attributes": {}, "id": "e82", "source": "side-channel-weakmap", "target": "object-inspect"}, {"attributes": {}, "id": "e83", "source": "side-channel-weakmap", "target": "side-channel-map"}, {"attributes": {}, "id": "e84", "source": "finalhandler", "target": "debug"}, {"attributes": {}, "id": "e85", "source": "finalhandler", "target": "encodeurl"}, {"attributes": {}, "id": "e86", "source": "finalhandler", "target": "escape-html"}, {"attributes": {}, "id": "e87", "source": "finalhandler", "target": "on-finished"}, {"attributes": {}, "id": "e88", "source": "finalhandler", "target": "parseurl"}, {"attributes": {}, "id": "e89", "source": "finalhandler", "target": "statuses"}, {"attributes": {}, "id": "e90", "source": "proxy-addr", "target": "forwarded"}, {"attributes": {}, "id": "e91", "source": "proxy-addr", "target": "ipaddr.js"}, {"attributes": {}, "id": "e92", "source": "accepts", "target": "mime-types"}, {"attributes": {}, "id": "e93", "source": "accepts", "target": "negotiator"}, {"attributes": {}, "id": "e94", "source": "debug", "target": "ms"}, {"attributes": {}, "id": "e95", "source": "send", "target": "debug"}, {"attributes": {}, "id": "e96", "source": "send", "target": "encodeurl"}, {"attributes": {}, "id": "e97", "source": "send", "target": "escape-html"}, {"attributes": {}, "id": "e98", "source": "send", "target": "etag"}, {"attributes": {}, "id": "e99", "source": "send", "target": "fresh"}, {"attributes": {}, "id": "e100", "source": "send", "target": "http-errors"}, {"attributes": {}, "id": "e101", "source": "send", "target": "mime-types"}, {"attributes": {}, "id": "e102", "source": "send", "target": "ms"}, {"attributes": {}, "id": "e103", "source": "send", "target": "on-finished"}, {"attributes": {}, "id": "e104", "source": "send", "target": "range-parser"}, {"attributes": {}, "id": "e105", "source": "send", "target": "statuses"}, {"attributes": {}, "id": "e106", "source": "type-is", "target": "content-type"}, {"attributes": {}, "id": "e107", "source": "type-is", "target": "media-typer"}, {"attributes": {}, "id": "e108", "source": "type-is", "target": "mime-types"}, {"attributes": {}, "id": "e109", "source": "side-channel-list", "target": "es-errors"}, {"attributes": {}, "id": "e110", "source": "side-channel-list", "target": "object-inspect"}, {"attributes": {}, "id": "e111", "source": "mime-types", "target": "mime-db"}, {"attributes": {}, "id": "e112", "source": "get-proto", "target": "dunder-proto"}, {"attributes": {}, "id": "e113", "source": "get-proto", "target": "es-object-atoms"}, {"attributes": {}, "id": "e114", "source": "dunder-proto", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e115", "source": "dunder-proto", "target": "es-errors"}, {"attributes": {}, "id": "e116", "source": "dunder-proto", "target": "gopd"}, {"attributes": {}, "id": "e117", "source": "router", "target": "debug"}, {"attributes": {}, "id": "e118", "source": "router", "target": "depd"}, {"attributes": {}, "id": "e119", "source": "router", "target": "is-promise"}, {"attributes": {}, "id": "e120", "source": "router", "target": "parseurl"}, {"attributes": {}, "id": "e121", "source": "router", "target": "path-to-regexp"}, {"attributes": {}, "id": "edge2", "source": "A", "target": "B"}, {"attributes": {}, "id": "edge3", "source": "B", "target": "C"}], "name": "express", "nodes": [{"attributes": {"description": "Fast, unopinionated, minimalist web framework", "license": "MIT", "version": "5.2.1"}, "id": "express"}, {"attributes": {"description": "A querystring parser that supports nesting and arrays, with a depth limit", "license": "BSD-3-Clause", "version": "6.15.0"}, "id": "qs"}, {"attributes": {"description": "Deprecate all the things", "license": "MIT", "version": "2.0.0"}, "id": "depd"}, {"attributes": {"description": "Create simple HTTP ETags", "license": "MIT", "version": "1.8.1"}, "id": "etag"}, {"attributes": {"description": "Run a function exactly one time", "license": "ISC", "version": "1.4.0"}, "id": "once"}, {"attributes": {"description": "Better streaming static file server with Range and conditional-GET support", "license": "MIT", "version": "1.2.1"}, "id": "send"}, {"attributes": {"description": "Manipulate the HTTP Vary header", "license": "MIT", "version": "1.1.2"}, "id": "vary"}, {"attributes": {"description": "Lightweight debugging utility for Node.js and the browser", "license": "MIT", "version": "4.4.3"}, "id": "debug"}, {"attributes": {"description": "HTTP response freshness testing", "license": "MIT", "version": "0.5.2"}, "id": "fresh"}, {"attributes": {"description": "HTTP server cookie parsing and serialization", "license": "MIT", "version": "1.1.1"}, "id": "cookie"}, {"attributes": {"description": "Simple middleware-style router", "license": "MIT", "version": "2.2.0"}, "id": "router"}, {"attributes": {"description": "Higher-level content negotiation", "license": "MIT", "version": "1.3.8"}, "id": "accepts"}, {"attributes": {"description": "Infer the content-type of a request.", "license": "MIT", "version": "2.0.1"}, "id": "type-is"}, {"attributes": {"description": "parse a url with memoization", "license": "MIT", "version": "1.3.3"}, "id": "parseurl"}, {"attributes": {"description": "HTTP status utility", "license": "MIT", "version": "2.0.2"}, "id": "statuses"}, {"attributes": {"description": "Encode a URL to a percent-encoded form, excluding already-encoded sequences", "license": "MIT", "version": "2.0.0"}, "id": "encodeurl"}, {"attributes": {"description": "The ultimate javascript content-type utility.", "license": "MIT", "version": "3.0.2"}, "id": "mime-types"}, {"attributes": {"description": "Determine address of proxied request", "license": "MIT", "version": "2.0.7"}, "id": "proxy-addr"}, {"attributes": {"description": "Node.js body parsing middleware", "license": "MIT", "version": "2.2.2"}, "id": "body-parser"}, {"attributes": {"description": "Escape string for use in HTML", "license": "MIT", "version": "1.0.3"}, "id": "escape-html"}, {"attributes": {"description": "Create HTTP error objects", "license": "MIT", "version": "2.0.1"}, "id": "http-errors"}, {"attributes": {"description": "Execute a callback when a request closes, finishes, or errors", "license": "MIT", "version": "2.4.1"}, "id": "on-finished"}, {"attributes": {"description": "Create and parse HTTP Content-Type header", "license": "MIT", "version": "1.0.5"}, "id": "content-type"}, {"attributes": {"description": "Node.js final http responder", "license": "MIT", "version": "2.1.1"}, "id": "finalhandler"}, {"attributes": {"description": "Range header field string parser", "license": "MIT", "version": "1.2.1"}, "id": "range-parser"}, {"attributes": {"description": "Serve static files", "license": "MIT", "version": "2.2.1"}, "id": "serve-static"}, {"attributes": {"description": "Sign and unsign cookies", "license": "MIT", "version": "1.2.2"}, "id": "cookie-signature"}, {"attributes": {"description": "Merge objects using their property descriptors", "license": "MIT", "version": "2.0.0"}, "id": "merge-descriptors"}, {"attributes": {"description": "Create and parse Content-Disposition header", "license": "MIT", "version": "1.0.1"}, "id": "content-disposition"}, {"attributes": {"description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT", "version": "1.1.0"}, "id": "side-channel"}, {"attributes": {"description": "A simple cache for a few of the JS Error constructors.", "license": "MIT", "version": "1.3.0"}, "id": "es-errors"}, {"attributes": {"description": "string representations of objects in node and the browser", "license": "MIT", "version": "1.13.4"}, "id": "object-inspect"}, {"attributes": {"description": "Store information about any JS value in a side channel, using a linked list", "license": "MIT", "version": "1.0.0"}, "id": "side-channel-list"}, {"attributes": {"description": "Store information about any JS value in a side channel, using a Map", "license": "MIT", "version": "1.0.1"}, "id": "side-channel-map"}, {"attributes": {"description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT", "version": "1.0.2"}, "id": "side-channel-weakmap"}, {"attributes": {"description": "Robust call-bound JavaScript intrinsics, using `call-bind` and `get-intrinsic`.", "license": "MIT", "version": "1.0.4"}, "id": "call-bound"}, {"attributes": {"description": "Get and robustly cache all JS language-level intrinsics at first require time", "license": "MIT", "version": "1.3.0"}, "id": "get-intrinsic"}, {"attributes": {"description": "return the first event in a set of ee/event pairs", "license": "MIT", "version": "1.1.1"}, "id": "ee-first"}, {"attributes": {"description": "Helper functions around Function call/apply/bind, for use in `call-bind`", "license": "MIT", "version": "1.0.2"}, "id": "call-bind-apply-helpers"}, {"attributes": {"description": "`Object.getOwnPropertyDescriptor`, but accounts for IE\u0027s broken implementation.", "license": "MIT", "version": "1.2.0"}, "id": "gopd"}, {"attributes": {"description": "A robust, ES3 compatible, \"has own property\" predicate.", "license": "MIT", "version": "2.0.2"}, "id": "hasown"}, {"attributes": {"description": "Robustly get the [[Prototype]] of an object", "license": "MIT", "version": "1.0.1"}, "id": "get-proto"}, {"attributes": {"description": "Determine if the JS environment has Symbol support. Supports spec, or shams.", "license": "MIT", "version": "1.1.0"}, "id": "has-symbols"}, {"attributes": {"description": "Implementation of Function.prototype.bind", "license": "MIT", "version": "1.1.2"}, "id": "function-bind"}, {"attributes": {"description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible", "license": "MIT", "version": "1.1.1"}, "id": "es-object-atoms"}, {"attributes": {"description": "ES Math-related intrinsics and helpers, robustly cached.", "license": "MIT", "version": "1.1.0"}, "id": "math-intrinsics"}, {"attributes": {"description": "`Object.defineProperty`, but not IE 8\u0027s broken one.", "license": "MIT", "version": "1.0.1"}, "id": "es-define-property"}, {"attributes": {"description": "Browser-friendly inheritance fully compatible with standard node.js inherits()", "license": "ISC", "version": "2.0.4"}, "id": "inherits"}, {"attributes": {"description": "A small polyfill for Object.setprototypeof", "license": "ISC", "version": "1.2.0"}, "id": "setprototypeof"}, {"attributes": {"description": "Convert a string of words to a JavaScript identifier", "license": "MIT", "version": "1.0.1"}, "id": "toidentifier"}, {"attributes": {"description": "Callback wrapping utility", "license": "ISC", "version": "1.0.2"}, "id": "wrappy"}, {"attributes": {"description": "Utility to parse a string bytes to bytes and vice-versa", "license": "MIT", "version": "3.1.2"}, "id": "bytes"}, {"attributes": {"description": "Convert character encodings in pure javascript.", "license": "MIT", "version": "0.7.2"}, "id": "iconv-lite"}, {"attributes": {"description": "Get and validate the raw body of a readable stream.", "license": "MIT", "version": "3.0.2"}, "id": "raw-body"}, {"attributes": {"description": "Modern Buffer API polyfill without footguns", "license": "MIT", "version": "2.1.2"}, "id": "safer-buffer"}, {"attributes": {"description": "Unpipe a stream from all destinations", "license": "MIT", "version": "1.0.0"}, "id": "unpipe"}, {"attributes": {"description": "Parse HTTP X-Forwarded-For header", "license": "MIT", "version": "0.2.0"}, "id": "forwarded"}, {"attributes": {"description": "A library for manipulating IPv4 and IPv6 addresses in JavaScript.", "license": "MIT", "version": "2.3.0"}, "id": "ipaddr.js"}, {"attributes": {"description": "HTTP content negotiation", "license": "MIT", "version": "1.0.0"}, "id": "negotiator"}, {"attributes": {"description": "Tiny millisecond conversion utility", "license": "MIT", "version": "2.1.3"}, "id": "ms"}, {"attributes": {"description": "Simple RFC 6838 media type parser and formatter", "license": "MIT", "version": "1.1.0"}, "id": "media-typer"}, {"attributes": {"description": "Media Type Database", "license": "MIT", "version": "1.54.0"}, "id": "mime-db"}, {"attributes": {"description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound", "license": "MIT", "version": "1.0.1"}, "id": "dunder-proto"}, {"attributes": {"description": "Test whether an object looks like a promises-a+ promise", "license": "MIT", "version": "4.0.0"}, "id": "is-promise"}, {"attributes": {"description": "Express style path to RegExp utility", "license": "MIT", "version": "8.3.0"}, "id": "path-to-regexp"}, {"attributes": {"label": "Node A"}, "id": "A"}, {"attributes": {"label": "Node B"}, "id": "B"}, {"attributes": {"label": "Node C"}, "id": "C"}], "type": "directed"}, "id": "ws-express", "name": "express"}]};
 </script>
 
 <!-- ── Application scripts ───────────────────────────────────── -->
@@ -1241,7 +1259,6 @@ function applyLayout(ws, layout) {
 function saveState() {
   try {
     const state = {
-      activeWsId,
       workspaces: workspaces.map(ws => ({
         id:            ws.id,
         simParams:     { ...ws.simParams },
@@ -1733,23 +1750,12 @@ function handleConsoleInput(ws, raw) {
 /* ── js/tree-view.js ── */
 
 /* ══════════════════════════════════════════════════════════════
-   tree-view.js — Left sidebar: hierarchical node tree,
-                  grouped by node attribute "type".
+   tree-view.js — Left sidebar: BFS tree grouped by connected
+                  component, root = node with fewest in-edges.
    ══════════════════════════════════════════════════════════════ */
 'use strict';
 
-const TREE_COLOR = {
-  module:   '#00d9ff',
-  class:    '#3ddc84',
-  function: '#ffb347',
-  external: '#8b90a0',
-  pipeline: '#a78bfa',
-  ml:       '#f87171',
-  storage:  '#34d399',
-  infra:    '#fbbf24',
-};
-
-/* ── Wire tree expand/collapse buttons ─────────────────────── */
+/* ── Wire expand/collapse buttons ────────────────────────────── */
 function wireTreeControls(ws) {
   const p = ws.pane;
   p.querySelector('.btn-expand-all').addEventListener('click', () => {
@@ -1762,54 +1768,166 @@ function wireTreeControls(ws) {
   });
 }
 
-/* ── Build the full tree from graph data ───────────────────── */
+/* ════════════════════════════════════════════════════════════════
+   buildTree
+   ════════════════════════════════════════════════════════════════ */
 function buildTree(ws, data) {
   const container = ws.treeBody;
   container.innerHTML = '';
 
-  /* Group nodes by their "type" attribute */
-  const groups = {};
+  if (!data.nodes || !data.nodes.length) {
+    container.querySelector('.tree-empty') ||
+      (container.innerHTML = '<div class="tree-empty">No nodes.</div>');
+    return;
+  }
+
+  const directed = data.type === 'directed';
+
+  /* ── Degree maps ─────────────────────────────────────────────── */
+  // inDeg[id]  = number of edges pointing INTO id
+  // outDeg[id] = number of edges going OUT of id
+  const inDeg  = {}, outDeg = {};
+  data.nodes.forEach(n => { inDeg[n.id] = 0; outDeg[n.id] = 0; });
+
+  // outAdj[id] = [targetId, ...] — used for BFS traversal
+  // undirAdj[id] = [neighborId, ...] — used for component detection
+  const outAdj   = {}, undirAdj = {};
+  data.nodes.forEach(n => { outAdj[n.id] = []; undirAdj[n.id] = []; });
+
+  (data.edges || []).forEach(e => {
+    const s = e.source, t = e.target;
+    if (!inDeg.hasOwnProperty(s) || !inDeg.hasOwnProperty(t)) return;
+    outDeg[s]++;
+    inDeg[t]++;
+    outAdj[s].push(t);
+    undirAdj[s].push(t);
+    undirAdj[t].push(s);
+    if (!directed) {
+      // undirected: symmetric
+      outDeg[t]++;
+      inDeg[s]++;
+      outAdj[t].push(s);
+    }
+  });
+
+  /* ── Connected components (undirected BFS) ───────────────────── */
+  const visited   = new Set();
+  const components = [];
+
   data.nodes.forEach(n => {
-    const t = (n.attributes && n.attributes.type) || 'other';
-    (groups[t] = groups[t] || []).push(n);
+    if (visited.has(n.id)) return;
+    const comp = [];
+    const queue = [n.id];
+    visited.add(n.id);
+    while (queue.length) {
+      const cur = queue.shift();
+      comp.push(cur);
+      undirAdj[cur].forEach(nb => {
+        if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+      });
+    }
+    components.push(comp);
   });
 
-  Object.entries(groups).forEach(([type, nodes]) => {
-    const col = TREE_COLOR[type] || '#8b90a0';
+  /* ── Root selection per component ────────────────────────────── */
+  function pickRoot(ids) {
+    return ids.slice().sort((a, b) => {
+      if (inDeg[a] !== inDeg[b]) return inDeg[a] - inDeg[b];   // fewer in-edges first
+      if (outDeg[b] !== outDeg[a]) return outDeg[b] - outDeg[a]; // more out-edges first
+      return String(a) < String(b) ? -1 : 1;                    // smaller id first
+    })[0];
+  }
 
-    const wrap = document.createElement('div');
-    const hdr  = document.createElement('div');
-    const kids = document.createElement('div');
+  /* ── Render ──────────────────────────────────────────────────── */
+  // globalPlaced tracks ids already rendered anywhere in the tree
+  // (used to detect cross-refs)
+  const globalPlaced = new Set();
 
-    hdr.className  = 'tree-group';
-    kids.className = 'tree-children open';
+  components.forEach((compIds, ci) => {
+    const root = pickRoot(compIds);
 
-    hdr.innerHTML = `
-      <span class="tree-toggle open">▶</span>
-      <span class="tree-color" style="background:${col}"></span>
-      <span>${type}</span>
-      <span class="tree-count">${nodes.length}</span>`;
+    // Component wrapper
+    const compWrap = document.createElement('div');
+    compWrap.className = 'tree-component';
 
-    nodes.forEach(n => {
-      const row = document.createElement('div');
-      row.className  = 'tree-node';
-      row.dataset.id = n.id;
-      row.innerHTML  = `
-        <span class="tree-dot" style="background:${col}"></span>
-        <span class="tree-label">${n.id}</span>`;
-      row.addEventListener('click', () => selectNode(ws, n.id));
-      kids.appendChild(row);
-    });
+    _bfsRender(root, compWrap, 0);
 
-    hdr.addEventListener('click', () => {
-      const open = kids.classList.toggle('open');
-      hdr.querySelector('.tree-toggle').classList.toggle('open', open);
-    });
-
-    wrap.appendChild(hdr);
-    wrap.appendChild(kids);
-    container.appendChild(wrap);
+    container.appendChild(compWrap);
   });
+
+  /* ── BFS render ──────────────────────────────────────────────── */
+  function _bfsRender(rootId, parentEl, _unused) {
+    // BFS queue: { id, parentEl, depth }
+    const queue = [{ id: rootId, parentEl, depth: 0 }];
+
+    while (queue.length) {
+      const { id, parentEl: pEl, depth } = queue.shift();
+
+      const isRef = globalPlaced.has(id);
+      globalPlaced.add(id);
+
+      const children = !isRef ? outAdj[id] : [];
+
+      const row      = _makeRow(id, depth, isRef, children.length > 0);
+      pEl.appendChild(row);
+
+      if (!isRef && children.length) {
+        const kidsEl = document.createElement('div');
+        kidsEl.className = 'tree-children open';
+        pEl.appendChild(kidsEl);
+
+        // Wire toggle
+        const toggle = row.querySelector('.tree-toggle');
+        if (toggle) {
+          toggle.addEventListener('click', e => {
+            e.stopPropagation();
+            const open = kidsEl.classList.toggle('open');
+            toggle.classList.toggle('open', open);
+          });
+        }
+
+        children.forEach(childId => {
+          queue.push({ id: childId, parentEl: kidsEl, depth: depth + 1 });
+        });
+      }
+    }
+  }
+
+  /* ── Build one row element ───────────────────────────────────── */
+  function _makeRow(id, depth, isRef, hasChildren) {
+    const row = document.createElement('div');
+    row.dataset.id = id;
+
+    const indent = 8 + depth * 14;
+
+    if (isRef) {
+      // Cross-reference: styled differently, click scrolls to original
+      row.className = 'tree-node tree-ref';
+      row.style.paddingLeft = indent + 'px';
+      row.innerHTML = `
+        <span class="tree-ref-arrow">↩</span>
+        <span class="tree-label">${id}</span>`;
+      row.title = 'Already shown above — click to select';
+      row.addEventListener('click', () => {
+        selectNode(ws, id);
+        // Scroll to the original row in the tree
+        const orig = container.querySelector(`.tree-node:not(.tree-ref)[data-id="${id}"]`);
+        if (orig) orig.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    } else {
+      row.className = 'tree-node';
+      row.style.paddingLeft = indent + 'px';
+      row.innerHTML = `
+        ${hasChildren ? '<span class="tree-toggle open">▶</span>' : '<span class="tree-leaf"></span>'}
+        <span class="tree-label">${id}</span>`;
+      row.addEventListener('click', e => {
+        if (e.target.classList.contains('tree-toggle')) return;
+        selectNode(ws, id);
+      });
+    }
+
+    return row;
+  }
 }
 
 
@@ -2394,7 +2512,7 @@ function attachWorkspaceTab(ws) {
   if (!tab) { console.error('Nessie: tab not found for', ws.id); return; }
   tab.addEventListener('click', e => {
     if (e.target.classList.contains('ws-tab-close')) closeWorkspace(ws.id);
-    else switchWorkspace(ws.id);
+    // TODO: povezati na back — promena aktivnog workspace-a dolazi sa servera
   });
   ws.tab = tab;
 }
@@ -2451,7 +2569,6 @@ function switchWorkspace(id) {
       }, 50);
     }
   }
-  debouncedSave();
 }
 
 /* ── Close a workspace ──────────────────────────────────────── */
@@ -2531,8 +2648,7 @@ document.getElementById('btn-settings-toggle').addEventListener('click', () => {
   }
 
   /* Determine active workspace */
-  const targetId = persisted.activeWsId
-    || (server.workspaces?.[server.activeWorkspaceIndex ?? 0]?.id)
+  const targetId = (server.workspaces?.[server.activeWorkspaceIndex ?? 0]?.id)
     || workspaces[0].id;
   const exists = workspaces.find(w => w.id === targetId);
   switchWorkspace(exists ? targetId : workspaces[0].id);

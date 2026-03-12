@@ -1,7 +1,7 @@
 from sqlite3 import adapt
 
 if __name__ == "__main__":
-	from nessie_api.models import Plugin, Action
+	from nessie_api.models import Edge, Action, Node, Attribute
 	from render import render
 
 
@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
 		def get_workspace_count(self):        return len(self._graphs)
 
-		def get_active_workspace_index(self): return 0
+		def get_active_workspace_index(self): return 2
 
 		def get_graph_at(self, i):            return self._graphs[i]
 
@@ -35,6 +35,15 @@ if __name__ == "__main__":
 	graph2 = ds.handle(action)
 	action = Action(name="load", payload={"Package Name": "express"})
 	graph3 = ds.handle(action)
+
+	node_a = Node("A", attributes={"label": Attribute("label", "Node A")})
+	node_b = Node("B", attributes={"label": Attribute("label", "Node B")})
+	node_c = Node("C", attributes={"label": Attribute("label", "Node C")})
+	graph3.add_node(node_a)
+	graph3.add_node(node_b)
+	graph3.add_node(node_c)
+	graph3.add_edge(Edge("edge2", source=node_a, target=node_b))
+	graph3.add_edge(Edge("edge3", source=node_b, target=node_c))
 
 	adapter = MyAdapter(graphs=[graph1, graph2, graph3], plugin=plugin_instance)
 
