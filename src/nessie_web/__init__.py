@@ -1,4 +1,5 @@
 """nessie_web — framework-agnostic HTML renderer za Nessie Graph Explorer."""
-from .render import render
-from .protocol import NessieAdapter
-__all__ = ["render", "NessieAdapter"]
+
+from nessie_web.plugin import nessie_web_plugin
+
+__all__ = ["nessie_web_plugin"]

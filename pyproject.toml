@@ -18,6 +18,10 @@ dependencies = [
     "jinja2>=3.1",
 ]
 
+[project.entry-points."nessie_plugins"]
+nessie_web_plugin = "nessie_web:nessie_web_plugin"
+
+
 [project.urls]
 Repository = "https://github.com/Nessie-org/nessie-web"
 
