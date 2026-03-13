@@ -1,5 +1,5 @@
 """
-nessie_web.render
+nessie_explorer.render
 ======================
 Jedina javna funkcija: ``render(adapter) -> str``.
 """
@@ -10,7 +10,7 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
-from protocol import NessieAdapter
+from nessie_api.protocols import Context
 
 _STATIC = Path(__file__).parent / "_static"
 
@@ -49,7 +49,7 @@ def _read_files(file_list: list[str]) -> str:
     return "\n".join(parts)
 
 
-def render(adapter: NessieAdapter) -> str:
+def render(adapter: Context) -> str:
     """
     Renderuje Nessie Graph Explorer u jedan samodovoljan HTML string.
 
@@ -57,7 +57,8 @@ def render(adapter: NessieAdapter) -> str:
     kako bi se osiguralo da se <script> tagovi unutar plugin HTML-a izvrse.
     """
     count        = adapter.get_workspace_count()
-    active_index = max(0, min(adapter.get_active_workspace_index(), count - 1))
+    raw_index    = adapter.get_active_workspace_index()
+    active_index = max(0, min(raw_index, count - 1)) if raw_index is not None else None
 
     workspaces_js:   list[dict[str, Any]] = []
     workspaces_html: list[dict[str, Any]] = []
@@ -67,7 +68,7 @@ def render(adapter: NessieAdapter) -> str:
         graph_dict = graph.to_dict()
         name       = graph_dict.get("name") or f"workspace_{i + 1}"
         ws_id      = f"ws-{name.replace(' ', '-')}"
-        is_active  = (i == active_index)
+        is_active  = (active_index is not None and i == active_index)
 
         # Serialize active filters via FilterExpression.to_json()
         try:
@@ -103,7 +104,7 @@ def render(adapter: NessieAdapter) -> str:
 
         # Plugin HTML se injektuje samo za aktivni workspace.
         # Ostali su prazne ljuske — tab klik ce ih lazy-loadati (TODO).
-        plugin_html = adapter.get_plugin_html_at(i) if is_active else ""
+        plugin_html = adapter.get_visualised_graph_at(i) if is_active else ""
         workspaces_html.append({
             "id":          ws_id,
             "name":        name,
@@ -112,7 +113,7 @@ def render(adapter: NessieAdapter) -> str:
         })
 
     server_state: dict[str, Any] = {
-        "activeWorkspaceIndex": active_index,
+        "activeWorkspaceIndex": active_index,  # None when no workspace is active
         "workspaces":           workspaces_js,
     }
 
@@ -130,5 +131,5 @@ def render(adapter: NessieAdapter) -> str:
         server_state_json=server_state,
         inline_css=inline_css,
         inline_js=inline_js,
-		plugin_name=adapter.get_visualiser_name_at(active_index),
+		plugin_name=adapter.get_visualiser_name_at(active_index) if active_index is not None else "-",
     )

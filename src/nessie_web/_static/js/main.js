@@ -116,7 +116,6 @@ function attachWorkspaceTab(ws) {
   tab.addEventListener('click', e => {
     if (e.target.classList.contains('ws-tab-close')) closeWorkspace(ws.id);
     // TODO: povezati na back — promena aktivnog workspace-a dolazi sa servera
-	  alert("Promena workspace-a")
   });
   ws.tab = tab;
 }
@@ -149,8 +148,6 @@ document.addEventListener('click', e => {
 
 /* ── Switch active workspace ────────────────────────────────── */
 function switchWorkspace(id) {
-	// TODO: switch workspace
-	alert("Switching")
   activeWsId = id;
   document.querySelectorAll('.ws-tab').forEach(t =>
     t.classList.toggle('active', t.dataset.wsId === id));
@@ -187,8 +184,6 @@ function closeWorkspace(id) {
   ws.tab.remove();
   workspaces.splice(idx, 1);
   switchWorkspace(workspaces[Math.min(idx, workspaces.length-1)].id);
-  // TODO: close workspace
-  alert("Close")
 }
 
 /* ── Status bar ─────────────────────────────────────────────── */
@@ -223,7 +218,6 @@ document.getElementById('plugin-chip').addEventListener('click', () => {
   alert('TODO: Plugin selector\n\nCurrent plugin: ' + (activeWs()?.pluginName || ''));
 });
 document.getElementById('ws-add').addEventListener('click', () => {
-	// TODO:  new workspace dialog
   alert('TODO: New workspace dialog');
 });
 document.getElementById('btn-settings-toggle').addEventListener('click', () => {
@@ -248,10 +242,11 @@ document.getElementById('btn-settings-toggle').addEventListener('click', () => {
     return;
   }
 
-  /* Determine active workspace */
-  const targetId = server.workspaces?.[server.activeWorkspaceIndex ?? 0]?.id
-    ?? workspaces[0].id;
-  const exists = workspaces.find(w => w.id === targetId);
-  switchWorkspace(exists ? targetId : workspaces[0].id);
+  /* Determine active workspace — null means none active */
+  if (server.activeWorkspaceIndex !== null && server.activeWorkspaceIndex !== undefined) {
+    const targetId = server.workspaces?.[server.activeWorkspaceIndex]?.id ?? workspaces[0].id;
+    const exists   = workspaces.find(w => w.id === targetId);
+    switchWorkspace(exists ? targetId : workspaces[0].id);
+  }
 
 })();
