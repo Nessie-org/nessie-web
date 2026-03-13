@@ -1,0 +1,43 @@
+/* ── Bird View ── */
+.bv-panel { flex-shrink:0; display:flex; flex-direction:column; border-bottom:1px solid var(--border); }
+.bv-wrap { flex:1; position:relative; background:var(--bg); overflow:hidden; }
+.bv-canvas { width:100%; height:100%; display:block; cursor:pointer; }
+/* ── Properties ── */
+.props-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; border-bottom:1px solid var(--border); }
+.props-body { flex:1; overflow-y:auto; }
+.props-empty { padding:24px 12px; text-align:center; color:var(--text-3); font-size:11px; }
+.props-node-hdr { padding:10px 12px 8px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.props-node-id { font-family:var(--font-ui); font-size:13px; font-weight:600; color:var(--text-1); margin-bottom:2px; }
+.props-node-meta { font-size:10px; color:var(--text-3); }
+.props-sec-hdr { padding:5px 12px; background:var(--bg-surface); font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-3); border-bottom:1px solid var(--border); }
+.props-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:4px 12px; font-size:11px; border-bottom:1px solid rgba(37,40,48,.5); }
+.pk { color:var(--text-3); flex-shrink:0; }
+.pv { color:var(--text-1); text-align:right; word-break:break-all; }
+.edge-row { display:flex; align-items:center; gap:6px; padding:4px 12px; font-size:11px; color:var(--text-2); cursor:pointer; transition:background var(--transition-fast); border-bottom:1px solid rgba(37,40,48,.5); }
+.edge-row:hover { background:var(--bg-hover); color:var(--text-1); }
+.eout { color:var(--accent); font-size:10px; }
+.ein { color:var(--green); font-size:10px; }
+.etgt { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.elbl { font-size:9px; color:var(--text-3); background:var(--bg-active); padding:1px 5px; border-radius:8px; flex-shrink:0; }
+/* ── Settings ── */
+.settings-hdr { display:flex; align-items:center; gap:7px; padding:0 12px; height:32px; cursor:pointer; background:var(--bg-surface); border-top:1px solid var(--border); font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); user-select:none; transition:background var(--transition-fast); flex-shrink:0; }
+.settings-hdr:hover { background:var(--bg-hover); }
+.settings-arrow { margin-left:auto; font-size:9px; transition:transform var(--transition-mid); }
+.settings-arrow.open { transform:rotate(180deg); }
+.settings-body { overflow:hidden; max-height:0; transition:max-height .25s ease,padding .25s ease; padding:0 12px; background:var(--bg-raised); display:flex; flex-direction:column; gap:9px; }
+.settings-body.open { max-height:280px; padding:10px 12px; }
+.ctrl { display:flex; flex-direction:column; gap:3px; }
+.ctrl-row { display:flex; justify-content:space-between; font-size:10.5px; }
+.cl { color:var(--text-2); }
+.cv { color:var(--accent); }
+.ctrl-slider { width:100%; height:3px; -webkit-appearance:none; appearance:none; background:var(--border-bright); border-radius:2px; outline:none; cursor:pointer; }
+.ctrl-slider::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--bg-raised); cursor:pointer; }
+.ctrl-slider::-moz-range-thumb { width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--bg-raised); }
+.sim-row { display:flex; align-items:center; justify-content:space-between; font-size:10.5px; color:var(--text-2); }
+.toggle { width:30px; height:16px; background:var(--border-bright); border-radius:8px; position:relative; cursor:pointer; transition:background var(--transition-mid); }
+.toggle.on { background:var(--accent); }
+.toggle-k { position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:#fff; transition:transform var(--transition-mid); }
+.toggle.on .toggle-k { transform:translateX(14px); }
+.settings-reset-row { display:flex; justify-content:flex-end; }
+.reset-btn { background:none; border:1px solid var(--border-bright); color:var(--text-3); font-family:var(--font-mono); font-size:10px; padding:2px 9px; border-radius:var(--radius-sm); cursor:pointer; transition:color var(--transition-fast),border-color var(--transition-fast); }
+.reset-btn:hover { color:var(--red); border-color:var(--red); }

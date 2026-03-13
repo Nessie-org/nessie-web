@@ -1,0 +1,75 @@
+/* ══════════════════════════════════════════════════════════════
+   main-view.css — Center: graph canvas area.
+   Node/edge base styles live here; plugins may override them.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Container */
+.main-view {
+  flex: 1; position: relative; overflow: hidden;
+  background: var(--bg); min-height: 0;
+}
+
+/* The SVG element injected by the plugin — fills the container */
+.graph-svg        { width: 100%; height: 100%; cursor: grab; display: block; }
+.graph-svg:active { cursor: grabbing; }
+
+/* ── Base node / edge styles ────────────────────────────────── */
+/* Plugins may override these by targeting #main-view-<name> */
+.node { cursor: pointer; }
+
+.block-bg {
+  fill: #181b22; stroke: #32363f; stroke-width: 1.5;
+  transition: stroke .15s, fill .15s;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.65));
+}
+.node:hover   .block-bg { stroke: var(--accent); fill: #1e2535; }
+.node.selected .block-bg { stroke: var(--accent); fill: #1d2840; }
+
+.edge         { stroke: #32363f; stroke-width: 1.5; fill: none; transition: stroke .15s; }
+.edge.highlighted { stroke: var(--accent); stroke-width: 2; }
+.edge-label   { font-family: var(--font-mono); font-size: 9.5px; fill: var(--text-3); pointer-events: none; }
+
+/* ── Empty state ────────────────────────────────────────────── */
+.graph-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; color: var(--text-3); pointer-events: none;
+}
+.graph-empty .ei { font-size: 44px; opacity: .12; }
+.graph-empty .em { font-size: 12px; }
+.graph-empty .eh {
+  font-size: 10.5px; opacity: .6;
+  background: var(--bg-active); padding: 2px 8px; border-radius: 3px;
+}
+
+/* ── Filter-active banner ───────────────────────────────────── */
+.filter-banner {
+  display: none; position: absolute; top: 0; left: 0; right: 0;
+  padding: 5px 14px; background: var(--amber-dim);
+  border-bottom: 1px solid rgba(255,179,71,.25);
+  color: var(--amber); font-size: 10.5px;
+  align-items: center; gap: 8px; z-index: 5;
+}
+.filter-banner.on { display: flex; }
+
+.fb-clear {
+  margin-left: auto; cursor: pointer; background: none;
+  border: none; color: var(--amber);
+  font-family: var(--font-mono); font-size: 11px;
+}
+.fb-clear:hover { text-decoration: underline; }
+
+/* ── Zoom controls (bottom-right overlay) ───────────────────── */
+.zoom-ctrls {
+  position: absolute; bottom: 12px; right: 12px;
+  display: flex; flex-direction: column; gap: 2px; z-index: 10;
+}
+.zoom-btn {
+  width: 26px; height: 26px; background: var(--bg-raised);
+  border: 1px solid var(--border-bright); color: var(--text-2);
+  border-radius: 4px; cursor: pointer; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); transition: background .1s, color .1s;
+}
+.zoom-btn:hover { background: var(--bg-hover); color: var(--text-1); }

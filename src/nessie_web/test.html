@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nessie — Graph Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+/* ── css/global.css ── */
+
+/* ══════════════════════════════════════════════════════════════
+   global.css — Design tokens, reset, scrollbars, body, app shell
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Design Tokens ──────────────────────────────────────────── */
+:root {
+  --bg:            #0c0d10;
+  --bg-surface:    #111318;
+  --bg-raised:     #181b22;
+  --bg-hover:      #1e2129;
+  --bg-active:     #23272f;
+  --border:        #252830;
+  --border-bright: #32363f;
+  --accent:        #00d9ff;
+  --accent-dim:    rgba(0,217,255,.12);
+  --accent-glow:   rgba(0,217,255,.26);
+  --green:         #3ddc84;
+  --green-dim:     rgba(61,220,132,.12);
+  --amber:         #ffb347;
+  --amber-dim:     rgba(255,179,71,.12);
+  --red:           #ff5f57;
+  --red-dim:       rgba(255,95,87,.12);
+  --text-1:        #dde1ec;
+  --text-2:        #8b90a0;
+  --text-3:        #454a58;
+  --font-mono:     'JetBrains Mono', monospace;
+  --font-ui:       'Syne', sans-serif;
+  --toolbar-h:     42px;
+  --wsbar-h:       34px;
+  --statusbar-h:   24px;
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text-1);
+  font-family: var(--font-mono); font-size: 12px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scanline overlay */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,.025) 2px, rgba(0,0,0,.025) 4px
+  );
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────── */
+::-webkit-scrollbar             { width: 5px; height: 5px; }
+::-webkit-scrollbar-track       { background: transparent; }
+::-webkit-scrollbar-thumb       { background: var(--border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── App shell ──────────────────────────────────────────────── */
+#app {
+  display: flex; flex-direction: column;
+  height: 100vh; width: 100vw; overflow: hidden;
+}
+
+/* ── Shared panel chrome ────────────────────────────────────── */
+.panel { display: flex; flex-direction: column; overflow: hidden; background: var(--bg-raised); }
+
+.panel-hdr {
+  display: flex; align-items: center;
+  height: 32px; padding: 0 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  gap: 7px; flex-shrink: 0; user-select: none;
+}
+
+.panel-title {
+  font-size: 10px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--text-2);
+}
+
+.panel-actions { margin-left: auto; display: flex; gap: 2px; }
+
+.icon-btn {
+  width: 22px; height: 22px; display: flex; align-items: center;
+  justify-content: center; background: none; border: none;
+  color: var(--text-3); border-radius: 3px; cursor: pointer;
+  font-size: 13px; transition: color .1s, background .1s;
+}
+.icon-btn:hover { color: var(--text-1); background: var(--bg-hover); }
+
+
+
+/* ── css/toolbar.css ── */
+
+/* ══════════════════════════════════════════════════════════════
+   toolbar.css — Top application toolbar
+   ══════════════════════════════════════════════════════════════ */
+
+#toolbar {
+  height: var(--toolbar-h); flex-shrink: 0;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 10px; gap: 2px; z-index: 100;
+}
+
+/* Brand */
+.brand {
+  display: flex; align-items: center; gap: 8px;
+  margin-right: 10px; padding-right: 10px;
+  border-right: 1px solid var(--border-bright); flex-shrink: 0;
+}
+.brand-name {
+  font-family: var(--font-ui); font-weight: 700;
+  font-size: 13px; letter-spacing: -.3px;
+}
+.brand-name em { font-style: normal; color: var(--accent); }
+
+/* Separators / spacer */
+.tb-sep    { width: 1px; height: 18px; background: var(--border-bright); margin: 0 4px; flex-shrink: 0; }
+.tb-spacer { flex: 1; }
+
+/* Toolbar buttons */
+.tb-btn {
+  display: flex; align-items: center; gap: 5px;
+  height: 28px; padding: 0 9px;
+  border: none; background: transparent; color: var(--text-2);
+  font-family: var(--font-mono); font-size: 11px;
+  border-radius: 4px; cursor: pointer;
+  transition: background .12s, color .12s; white-space: nowrap; flex-shrink: 0;
+}
+.tb-btn:hover    { background: var(--bg-hover); color: var(--text-1); }
+.tb-btn:disabled { opacity: .3; cursor: not-allowed; }
+.tb-btn.active   { background: var(--accent-dim); color: var(--accent); }
+.tb-btn svg      { width: 13px; height: 13px; opacity: .7; flex-shrink: 0; }
+.tb-btn:hover svg { opacity: 1; }
+
+/* Plugin chip */
+.plugin-chip {
+  display: flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 8px 0 9px;
+  background: var(--bg-active);
+  border: 1px solid var(--border-bright);
+  border-radius: 5px; font-size: 10.5px; color: var(--text-2);
+  cursor: pointer; transition: border-color .12s, color .12s; flex-shrink: 0;
+}
+.plugin-chip:hover { border-color: var(--accent); color: var(--text-1); }
+
+.plugin-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 5px var(--green); flex-shrink: 0;
+}
+.plugin-name  { color: var(--green); }
+.plugin-change {
+  font-size: 9px; color: var(--text-3); margin-left: 2px;
+  border-left: 1px solid var(--border-bright); padding-left: 6px;
+  transition: color .1s;
+}
+.plugin-chip:hover .plugin-change { color: var(--accent); }
+
+
+
+/* ── css/wsbar.css ── */
+
+/* ══════════════════════════════════════════════════════════════
+   wsbar.css — Workspace tab bar
+   ══════════════════════════════════════════════════════════════ */
+
+#wsbar {
+  height: var(--wsbar-h); flex-shrink: 0;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-end;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+}
+#wsbar::-webkit-scrollbar { display: none; }
+
+/* Individual tab */
+.ws-tab {
+  display: flex; align-items: center; gap: 7px;
+  height: 28px; padding: 0 12px 0 10px;
+  color: var(--text-2); font-size: 11px;
+  cursor: pointer; user-select: none; flex-shrink: 0;
+  border-bottom: 2px solid transparent;
+  border-right: 1px solid var(--border);
+  transition: color .1s, background .1s;
+  position: relative; white-space: nowrap;
+}
+.ws-tab:hover  { color: var(--text-1); background: var(--bg-hover); }
+.ws-tab.active { color: var(--text-1); background: var(--bg); border-bottom-color: var(--accent); }
+
+/* Status dot on tab — color driven by graph presence, set by JS */
+.ws-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  transition: background .2s;
+}
+.ws-dot.green  { background: var(--green); }
+.ws-dot.amber  { background: var(--amber); }
+.ws-dot.accent { background: var(--accent); }
+.ws-dot.empty  { background: var(--border-bright); }
+
+/* Close button */
+.ws-tab-close {
+  width: 14px; height: 14px; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--text-3); margin-left: 2px;
+  transition: color .1s, background .1s; flex-shrink: 0;
+}
+.ws-tab:hover .ws-tab-close { color: var(--text-2); }
+.ws-tab-close:hover { color: var(--red) !important; background: var(--red-dim); }
+
+/* New workspace button */
+.ws-add {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 28px; flex-shrink: 0;
+  color: var(--text-3); font-size: 16px; cursor: pointer;
+  border-right: 1px solid var(--border);
+  transition: color .1s, background .1s;
+}
+.ws-add:hover { color: var(--accent); background: var(--bg-hover); }
+
+
+
+/* ── css/layout.css ── */
+
+/* ══════════════════════════════════════════════════════════════
+   layout.css — Workspace pane shell, 3-column layout,
+                resize handles, drag overlay
+   ══════════════════════════════════════════════════════════════ */
+
+/* Workspace content container */
+#ws-content {
+  flex: 1; overflow: hidden; min-height: 0; position: relative;
+}
+
+/* Each workspace pane: absolutely stacked, one active at a time */
+.ws-pane {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column;
+  overflow: hidden;
+}
+.ws-pane.active { display: flex; }
+
+/* Inner 3-column layout */
+.layout {
+  flex: 1; display: flex; overflow: hidden; min-height: 0;
+}
+
+/* Column base */
+.col {
+  display: flex; flex-direction: column;
+  overflow: hidden; min-width: 0;
+}
+.col-left   { flex-shrink: 0; border-right: 1px solid var(--border); }
+.col-right  { flex-shrink: 0; border-left:  1px solid var(--border); }
+.col-center { flex: 1; min-width: 0; }
+
+/* ── Resize handles ─────────────────────────────────────────── */
+.v-handle {
+  width: 4px; background: transparent; cursor: col-resize;
+  flex-shrink: 0; position: relative; z-index: 50;
+}
+.v-handle::after {
+  content: ''; position: absolute;
+  top: 0; bottom: 0; left: 1px; width: 2px;
+  background: transparent; transition: background .15s;
+}
+.v-handle:hover::after,
+.v-handle.dragging::after { background: var(--accent); }
+
+.h-handle {
+  height: 4px; background: transparent; cursor: row-resize;
+  flex-shrink: 0; position: relative; z-index: 50;
+}
+.h-handle::after {
+  content: ''; position: absolute;
+  left: 0; right: 0; top: 1px; height: 2px;
+  background: transparent; transition: background .15s;
+}
+.h-handle:hover::after,
+.h-handle.dragging::after { background: var(--accent); }
+
+/* Transparent overlay that captures mouse during resize,
+   preventing SVG/canvas from stealing events */
+#drag-overlay {
+  display: none; position: fixed; inset: 0; z-index: 999; cursor: inherit;
+}
+#drag-overlay.active { display: block; }
+
+
+
+/* ── css/tree-view.css ── */
+
+/* ══════════════════════════════════════════════════════════════
+   tree-view.css — Left sidebar: node tree
+   ══════════════════════════════════════════════════════════════ */
+
+.tree-body  { flex: 1; overflow-y: auto; padding: 4px 0; }
+
+.tree-empty {
+  padding: 24px 16px; text-align: center;
+  color: var(--text-3); font-size: 11px; line-height: 1.8;
+}
+
+/* Group header row */
+.tree-group {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 10px 3px 8px; cursor: pointer;
+  font-size: 11px; color: var(--text-2);
+  user-select: none; border-radius: 3px; margin: 1px 4px;
+  transition: background .08s;
+}
+.tree-group:hover { background: var(--bg-hover); color: var(--text-1); }
+
+.tree-toggle {
+  font-size: 9px; opacity: .5; width: 12px;
+  transition: transform .15s; flex-shrink: 0;
+}
+.tree-toggle.open { transform: rotate(90deg); }
+
+.tree-color { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+.tree-count { font-size: 10px; color: var(--text-3); margin-left: auto; }
+
+/* Collapsible children */
+.tree-children      { display: none; }
+.tree-children.open { display: block; }
+
+/* Individual node row */
+.tree-node {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 10px 3px 26px; cursor: pointer;
+  font-size: 11px; color: var(--text-2);
+  border-radius: 3px; margin: 1px 4px;
+  transition: background .08s, color .08s; user-select: none;
+}
+.tree-node:hover    { background: var(--bg-hover); color: var(--text-1); }
+.tree-node.selected { background: var(--accent-dim); color: var(--accent); }
+
+.tree-dot   { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; opacity: .7; }
+.tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Component wrapper */
+.tree-component { margin-bottom: 4px; }
+
+/* Leaf spacer (no toggle) */
+.tree-leaf { width: 12px; flex-shrink: 0; }
+
+/* Cross-reference row */
+.tree-ref {
+  color: var(--text-3);
+  font-style: italic;
+}
+.tree-ref:hover { background: var(--bg-hover); color: var(--text-2); }
+
+.tree-ref-arrow {
+  font-size: 10px; width: 12px; flex-shrink: 0;
+  color: var(--accent); opacity: .6;
+}
+
+
+
+/* ── css/main-view.css ── */
+
+/* ══════════════════════════════════════════════════════════════
+   main-view.css — Center: graph canvas area.
+   Node/edge base styles live here; plugins may override them.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Container */
+.main-view {
+  flex: 1; position: relative; overflow: hidden;
+  background: var(--bg); min-height: 0;
+}
+
+/* The SVG element injected by the plugin — fills the container */
+.graph-svg        { width: 100%; height: 100%; cursor: grab; display: block; }
+.graph-svg:active { cursor: grabbing; }
+
+/* ── Base node / edge styles ────────────────────────────────── */
+/* Plugins may override these by targeting #main-view-<name> */
+.node { cursor: pointer; }
+
+.block-bg {
+  fill: #181b22; stroke: #32363f; stroke-width: 1.5;
+  transition: stroke .15s, fill .15s;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.65));
+}
+.node:hover   .block-bg { stroke: var(--accent); fill: #1e2535; }
+.node.selected .block-bg { stroke: var(--accent); fill: #1d2840; }
+
+.edge         { stroke: #32363f; stroke-width: 1.5; fill: none; transition: stroke .15s; }
+.edge.highlighted { stroke: var(--accent); stroke-width: 2; }
+.edge-label   { font-family: var(--font-mono); font-size: 9.5px; fill: var(--text-3); pointer-events: none; }
+
+/* ── Empty state ────────────────────────────────────────────── */
+.graph-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; color: var(--text-3); pointer-events: none;
+}
+.graph-empty .ei { font-size: 44px; opacity: .12; }
+.graph-empty .em { font-size: 12px; }
+.graph-empty .eh {
+  font-size: 10.5px; opacity: .6;
+  background: var(--bg-active); padding: 2px 8px; border-radius: 3px;
+}
+
+/* ── Filter-active banner ───────────────────────────────────── */
+.filter-banner {
+  display: none; position: absolute; top: 0; left: 0; right: 0;
+  padding: 5px 14px; background: var(--amber-dim);
+  border-bottom: 1px solid rgba(255,179,71,.25);
+  color: var(--amber); font-size: 10.5px;
+  align-items: center; gap: 8px; z-index: 5;
+}
+.filter-banner.on { display: flex; }
+
+.fb-clear {
+  margin-left: auto; cursor: pointer; background: none;
+  border: none; color: var(--amber);
+  font-family: var(--font-mono); font-size: 11px;
+}
+.fb-clear:hover { text-decoration: underline; }
+
+/* ── Zoom controls (bottom-right overlay) ───────────────────── */
+.zoom-ctrls {
+  position: absolute; bottom: 12px; right: 12px;
+  display: flex; flex-direction: column; gap: 2px; z-index: 10;
+}
+.zoom-btn {
+  width: 26px; height: 26px; background: var(--bg-raised);
+  border: 1px solid var(--border-bright); color: var(--text-2);
+  border-radius: 4px; cursor: pointer; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); transition: background .1s, color .1s;
+}
+.zoom-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+
+
+
+/* ── css/bottom.css ── */
+
+/* ── Bottom Pane ────────────────────────────────────────────────── */
+.bottom-pane { display:flex; flex-direction:column; min-height:0; border-top:1px solid var(--border); }
+.btabs { display:flex; align-items:flex-end; background:var(--bg-surface); border-bottom:1px solid var(--border); padding:0 8px; flex-shrink:0; }
+.btab { height:30px; padding:0 12px; font-size:10.5px; color:var(--text-2); cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:5px; transition:color var(--transition-fast),border-color var(--transition-fast); white-space:nowrap; user-select:none; }
+.btab:hover { color:var(--text-1); }
+.btab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.btab-badge { background:var(--accent); color:var(--bg); font-size:8.5px; font-weight:700; min-width:14px; height:14px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; padding:0 3px; }
+.tab-pane { flex:1; overflow:hidden; display:none; flex-direction:column; min-height:0; }
+.tab-pane.active { display:flex; }
+/* Console */
+.con-output { flex:1; overflow-y:auto; padding:6px 12px; line-height:1.65; font-size:11.5px; }
+.con-line { display:flex; gap:8px; align-items:baseline; }
+.con-ts { color:var(--text-3); font-size:10px; flex-shrink:0; }
+.con-msg { color:var(--text-2); word-break:break-word; }
+.con-line.ok .con-msg { color:var(--green); }
+.con-line.warn .con-msg { color:var(--amber); }
+.con-line.error .con-msg { color:var(--red); }
+.con-line.input .con-msg { color:var(--text-1); }
+.con-input-row { display:flex; align-items:center; gap:6px; padding:5px 12px; border-top:1px solid var(--border); background:var(--bg-surface); flex-shrink:0; }
+.con-prompt { color:var(--accent); flex-shrink:0; }
+.con-input { flex:1; background:none; border:none; outline:none; color:var(--text-1); font-family:var(--font-mono); font-size:11.5px; caret-color:var(--accent); }
+.con-input::placeholder { color:var(--text-3); }
+/* Filters */
+.filter-bar { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:6px 10px; background:var(--bg-surface); border-bottom:1px solid var(--border); flex-shrink:0; }
+.filter-input-txt, .filter-select { background:var(--bg-active); border:1px solid var(--border-bright); color:var(--text-1); font-family:var(--font-mono); font-size:11px; padding:3px 7px; border-radius:var(--radius-sm); outline:none; transition:border-color var(--transition-fast); }
+.filter-input-txt { width:100px; caret-color:var(--accent); }
+.filter-input-txt:focus, .filter-select:focus { border-color:var(--accent); }
+.filter-input-txt::placeholder { color:var(--text-3); }
+.filter-select { cursor:pointer; }
+.filter-apply { background:var(--accent-dim); border:1px solid var(--accent); color:var(--accent); font-family:var(--font-mono); font-size:11px; padding:3px 12px; border-radius:var(--radius-sm); cursor:pointer; transition:background var(--transition-fast); }
+.filter-apply:hover { background:var(--accent-glow); }
+.filter-reset { background:none; border:1px solid var(--border-bright); color:var(--text-3); font-family:var(--font-mono); font-size:11px; padding:3px 8px; border-radius:var(--radius-sm); cursor:pointer; transition:color var(--transition-fast),border-color var(--transition-fast); }
+.filter-reset:hover { color:var(--red); border-color:var(--red); }
+.filter-stack { flex:1; overflow-y:auto; padding:6px 8px; display:flex; flex-direction:column; gap:4px; }
+.filter-empty { color:var(--text-3); font-size:11px; padding:12px 6px; }
+.filter-card { display:flex; align-items:center; gap:8px; padding:5px 10px; background:var(--bg-active); border:1px solid var(--border-bright); border-left:2px solid var(--accent); border-radius:var(--radius-sm); font-size:11px; animation:fadein .15s ease; }
+@keyframes fadein { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
+.fc-expr { flex:1; color:var(--text-1); }
+.fc-rm { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:12px; width:16px; height:16px; display:flex; align-items:center; justify-content:center; border-radius:2px; transition:color var(--transition-fast),background var(--transition-fast); }
+.fc-rm:hover { color:var(--red); background:var(--red-dim); }
+
+/* Console input prompt rows */
+.con-input-row.con-line { cursor: pointer; }
+.con-input-row.con-line:hover { background: var(--bg-hover); color: var(--text-1); }
+.con-input-label { color: var(--accent); }
+.con-prompt-arrow { font-size: 8px; color: var(--accent); opacity: .7; margin-right: 2px; }
+
+
+
+/* ── css/right-sidebar.css ── */
+
+/* ── Bird View ── */
+.bv-panel { flex-shrink:0; display:flex; flex-direction:column; border-bottom:1px solid var(--border); }
+.bv-wrap { flex:1; position:relative; background:var(--bg); overflow:hidden; }
+.bv-canvas { width:100%; height:100%; display:block; cursor:pointer; }
+/* ── Properties ── */
+.props-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; border-bottom:1px solid var(--border); }
+.props-body { flex:1; overflow-y:auto; }
+.props-empty { padding:24px 12px; text-align:center; color:var(--text-3); font-size:11px; }
+.props-node-hdr { padding:10px 12px 8px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.props-node-id { font-family:var(--font-ui); font-size:13px; font-weight:600; color:var(--text-1); margin-bottom:2px; }
+.props-node-meta { font-size:10px; color:var(--text-3); }
+.props-sec-hdr { padding:5px 12px; background:var(--bg-surface); font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-3); border-bottom:1px solid var(--border); }
+.props-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:4px 12px; font-size:11px; border-bottom:1px solid rgba(37,40,48,.5); }
+.pk { color:var(--text-3); flex-shrink:0; }
+.pv { color:var(--text-1); text-align:right; word-break:break-all; }
+.edge-row { display:flex; align-items:center; gap:6px; padding:4px 12px; font-size:11px; color:var(--text-2); cursor:pointer; transition:background var(--transition-fast); border-bottom:1px solid rgba(37,40,48,.5); }
+.edge-row:hover { background:var(--bg-hover); color:var(--text-1); }
+.eout { color:var(--accent); font-size:10px; }
+.ein { color:var(--green); font-size:10px; }
+.etgt { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.elbl { font-size:9px; color:var(--text-3); background:var(--bg-active); padding:1px 5px; border-radius:8px; flex-shrink:0; }
+/* ── Settings ── */
+.settings-hdr { display:flex; align-items:center; gap:7px; padding:0 12px; height:32px; cursor:pointer; background:var(--bg-surface); border-top:1px solid var(--border); font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); user-select:none; transition:background var(--transition-fast); flex-shrink:0; }
+.settings-hdr:hover { background:var(--bg-hover); }
+.settings-arrow { margin-left:auto; font-size:9px; transition:transform var(--transition-mid); }
+.settings-arrow.open { transform:rotate(180deg); }
+.settings-body { overflow:hidden; max-height:0; transition:max-height .25s ease,padding .25s ease; padding:0 12px; background:var(--bg-raised); display:flex; flex-direction:column; gap:9px; }
+.settings-body.open { max-height:280px; padding:10px 12px; }
+.ctrl { display:flex; flex-direction:column; gap:3px; }
+.ctrl-row { display:flex; justify-content:space-between; font-size:10.5px; }
+.cl { color:var(--text-2); }
+.cv { color:var(--accent); }
+.ctrl-slider { width:100%; height:3px; -webkit-appearance:none; appearance:none; background:var(--border-bright); border-radius:2px; outline:none; cursor:pointer; }
+.ctrl-slider::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--bg-raised); cursor:pointer; }
+.ctrl-slider::-moz-range-thumb { width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--bg-raised); }
+.sim-row { display:flex; align-items:center; justify-content:space-between; font-size:10.5px; color:var(--text-2); }
+.toggle { width:30px; height:16px; background:var(--border-bright); border-radius:8px; position:relative; cursor:pointer; transition:background var(--transition-mid); }
+.toggle.on { background:var(--accent); }
+.toggle-k { position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:#fff; transition:transform var(--transition-mid); }
+.toggle.on .toggle-k { transform:translateX(14px); }
+.settings-reset-row { display:flex; justify-content:flex-end; }
+.reset-btn { background:none; border:1px solid var(--border-bright); color:var(--text-3); font-family:var(--font-mono); font-size:10px; padding:2px 9px; border-radius:var(--radius-sm); cursor:pointer; transition:color var(--transition-fast),border-color var(--transition-fast); }
+.reset-btn:hover { color:var(--red); border-color:var(--red); }
+
+
+
+/* ── css/statusbar.css ── */
+
+#statusbar { height:var(--statusbar-h); flex-shrink:0; display:flex; align-items:center; background:var(--bg-surface); border-top:1px solid var(--border); font-size:10.5px; color:var(--text-2); }
+.sb-item { display:flex; align-items:center; gap:5px; height:100%; padding:0 8px; white-space:nowrap; }
+.sb-sep { width:1px; height:14px; background:var(--border-bright); margin:0 1px; flex-shrink:0; }
+.sb-spacer { flex:1; }
+.sb-dot { width:5px; height:5px; border-radius:50%; background:var(--text-3); }
+.sb-dot.live { background:var(--green); box-shadow:0 0 5px var(--green); }
+.sb-acc { color:var(--accent); }
+.sb-grn { color:var(--green); }
+
+
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Toolbar ───────────────────────────────────────────────── -->
+  <div id="toolbar">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="3" fill="#00d9ff"/>
+        <circle cx="4"  cy="4"  r="2" stroke="#00d9ff" stroke-width="1.2"/>
+        <circle cx="18" cy="4"  r="2" stroke="#00d9ff" stroke-width="1.2"/>
+        <circle cx="4"  cy="18" r="2" stroke="#3ddc84" stroke-width="1.2"/>
+        <circle cx="18" cy="18" r="2" stroke="#3ddc84" stroke-width="1.2"/>
+        <line x1="11" y1="8"  x2="5.4"  y2="5.4"  stroke="#00d9ff" stroke-width="1" opacity=".5"/>
+        <line x1="11" y1="8"  x2="16.6" y2="5.4"  stroke="#00d9ff" stroke-width="1" opacity=".5"/>
+        <line x1="11" y1="14" x2="5.4"  y2="16.6" stroke="#3ddc84" stroke-width="1" opacity=".5"/>
+        <line x1="11" y1="14" x2="16.6" y2="16.6" stroke="#3ddc84" stroke-width="1" opacity=".5"/>
+      </svg>
+      <span class="brand-name">Nessie<em>Graph</em></span>
+    </div>
+
+    <button class="tb-btn" id="btn-fit">
+      <svg viewBox="0 0 16 16" fill="currentColor">
+        <path d="M1.5 1h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0V1.5a.5.5 0 0 1 .5-.5zm9 0a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1h3zm2 0h.5a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3h-.5a.5.5 0 0 1 0-1zM1 10.5a.5.5 0 0 1 1 0v3h3a.5.5 0 0 1 0 1H1.5a.5.5 0 0 1-.5-.5v-3zm13 0a.5.5 0 0 1 1 0v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1h3v-3z"/>
+      </svg>
+      Fit
+    </button>
+    <button class="tb-btn" id="btn-reload" disabled>
+      <svg viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+      </svg>
+      Reload
+    </button>
+
+    <div class="tb-sep"></div>
+    <span class="tb-spacer"></span>
+
+    <div class="plugin-chip" id="plugin-chip" title="Active visualizer plugin">
+      <span class="plugin-dot"></span>
+      <span class="plugin-name" id="plugin-name">Visualiser Block</span>
+    </div>
+
+    <div class="tb-sep"></div>
+    <button class="tb-btn icon-btn" id="btn-settings-toggle" title="Settings" style="width:32px;padding:0;justify-content:center">⚙</button>
+  </div>
+
+  <!-- ── Workspace Tab Bar ─────────────────────────────────────── -->
+  <div id="wsbar">
+    <div class="ws-tab" data-ws-id="ws-mysql">
+      <span class="ws-dot empty"></span>
+      <span class="ws-tab-label">mysql</span>
+      <span class="ws-tab-close" title="Close">✕</span>
+    </div>
+    <div class="ws-tab" data-ws-id="ws-axios">
+      <span class="ws-dot empty"></span>
+      <span class="ws-tab-label">axios</span>
+      <span class="ws-tab-close" title="Close">✕</span>
+    </div>
+    <div class="ws-tab active" data-ws-id="ws-express">
+      <span class="ws-dot empty"></span>
+      <span class="ws-tab-label">express</span>
+      <span class="ws-tab-close" title="Close">✕</span>
+    </div>
+    <div class="ws-add" id="ws-add" title="New workspace">＋</div>
+  </div>
+
+  <!-- ── Workspace Content — server-rendered, scripts execute ──── -->
+  <div id="ws-content">
+    <div class="ws-pane" data-ws-id="ws-mysql">
+      <div class="layout">
+
+        <!-- LEFT: Tree View -->
+        <div class="col col-left" style="width:220px">
+          <div class="panel" style="flex:1">
+            <div class="panel-hdr">
+              <span class="panel-title">Tree View</span>
+              <div class="panel-actions">
+                <button class="icon-btn btn-expand-all"   title="Expand all">⊞</button>
+                <button class="icon-btn btn-collapse-all" title="Collapse all">⊟</button>
+              </div>
+            </div>
+            <div class="tree-body" style="flex:1;overflow-y:auto">
+              <div class="tree-empty">Load a graph to populate the tree.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v-handle v-handle-left"></div>
+
+        <!-- CENTER: main view + console/filters -->
+        <div class="col col-center">
+
+          <div class="main-view" style="flex:1;min-height:0">
+            <!-- ── Inactive workspace — plugin HTML loaded on tab click (TODO) ── -->
+
+            <div class="graph-empty">
+              <div class="ei">⬡</div>
+              <div class="em">No graph loaded</div>
+              <div class="eh">Waiting for graph data…</div>
+            </div>
+
+            <div class="filter-banner">
+              <span class="filter-banner-txt">⚗ Filter active</span>
+              <button class="fb-clear">✕ Clear all</button>
+            </div>
+
+            <div class="zoom-ctrls">
+              <button class="zoom-btn zoom-in">+</button>
+              <button class="zoom-btn zoom-fit">⊡</button>
+              <button class="zoom-btn zoom-out">−</button>
+            </div>
+          </div>
+
+          <div class="h-handle"></div>
+
+          <div class="bottom-pane" style="height:190px;flex-basis:190px;flex-grow:0;flex-shrink:0">
+            <div class="btabs">
+              <div class="btab active" data-tab="console">▶ Console</div>
+              <div class="btab" data-tab="filters">
+                ⚗ Filters
+                <span class="btab-badge" style="display:none">0</span>
+              </div>
+            </div>
+
+            <div class="tab-pane active" data-tab-id="console">
+              <div class="con-output"></div>
+              <div class="con-input-row">
+                <span class="con-prompt">nessie:~$</span>
+                <input class="con-input" type="text" autocomplete="off"
+                       spellcheck="false" placeholder="type 'help' for commands…">
+              </div>
+            </div>
+
+            <div class="tab-pane" data-tab-id="filters">
+              <div class="filter-bar">
+                <input class="filter-input-txt filter-attr" type="text" placeholder="attribute name">
+                <select class="filter-select filter-op">
+                  <option value="==">==</option>
+                  <option value="!=">!=</option>
+                  <option value="&lt;">&lt;</option>
+                  <option value="&lt;=">&lt;=</option>
+                  <option value="&gt;">&gt;</option>
+                  <option value="&gt;=">&gt;=</option>
+                </select>
+                <input class="filter-input-txt filter-val" type="text" placeholder="value">
+                <button class="filter-apply">Apply</button>
+                <button class="filter-reset">Reset all</button>
+              </div>
+              <div class="filter-stack">
+                <div class="filter-empty">No active filters</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v-handle v-handle-right"></div>
+
+        <!-- RIGHT: Bird View + Properties + Settings -->
+        <div class="col col-right" style="width:240px">
+          <div class="bv-panel" style="height:188px">
+            <div class="panel-hdr"><span class="panel-title">Bird View</span></div>
+            <div class="bv-wrap" style="flex:1">
+              <canvas class="bv-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="props-panel" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+            <div class="panel-hdr"><span class="panel-title">Properties</span></div>
+            <div class="props-body" style="flex:1;overflow-y:auto">
+              <div class="props-empty">Select a node to inspect</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="settings-hdr">
+              <span>⚙ Physics Settings</span>
+              <span class="settings-arrow">▼</span>
+            </div>
+            <div class="settings-body">
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Link Distance</span><span class="cv v-link">120</span></div>
+                <input class="ctrl-slider sl-link" type="range" min="10" max="2000" step="10" value="200">
+              </div>
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Charge</span><span class="cv v-charge">-300</span></div>
+                <input class="ctrl-slider sl-charge" type="range" min="-3000" max="0" step="10" value="-500">
+              </div>
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Collision Padding</span><span class="cv v-coll">20</span></div>
+                <input class="ctrl-slider sl-coll" type="range" min="0" max="300" step="5" value="20">
+              </div>
+              <div class="sim-row">
+                <span>Simulation</span>
+                <div class="toggle on sim-toggle"><div class="toggle-k"></div></div>
+              </div>
+              <div class="settings-reset-row">
+                <button class="reset-btn">Reset defaults</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /layout -->
+    </div><!-- /ws-pane -->
+    <div class="ws-pane" data-ws-id="ws-axios">
+      <div class="layout">
+
+        <!-- LEFT: Tree View -->
+        <div class="col col-left" style="width:220px">
+          <div class="panel" style="flex:1">
+            <div class="panel-hdr">
+              <span class="panel-title">Tree View</span>
+              <div class="panel-actions">
+                <button class="icon-btn btn-expand-all"   title="Expand all">⊞</button>
+                <button class="icon-btn btn-collapse-all" title="Collapse all">⊟</button>
+              </div>
+            </div>
+            <div class="tree-body" style="flex:1;overflow-y:auto">
+              <div class="tree-empty">Load a graph to populate the tree.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v-handle v-handle-left"></div>
+
+        <!-- CENTER: main view + console/filters -->
+        <div class="col col-center">
+
+          <div class="main-view" style="flex:1;min-height:0">
+            <!-- ── Inactive workspace — plugin HTML loaded on tab click (TODO) ── -->
+
+            <div class="graph-empty">
+              <div class="ei">⬡</div>
+              <div class="em">No graph loaded</div>
+              <div class="eh">Waiting for graph data…</div>
+            </div>
+
+            <div class="filter-banner">
+              <span class="filter-banner-txt">⚗ Filter active</span>
+              <button class="fb-clear">✕ Clear all</button>
+            </div>
+
+            <div class="zoom-ctrls">
+              <button class="zoom-btn zoom-in">+</button>
+              <button class="zoom-btn zoom-fit">⊡</button>
+              <button class="zoom-btn zoom-out">−</button>
+            </div>
+          </div>
+
+          <div class="h-handle"></div>
+
+          <div class="bottom-pane" style="height:190px;flex-basis:190px;flex-grow:0;flex-shrink:0">
+            <div class="btabs">
+              <div class="btab active" data-tab="console">▶ Console</div>
+              <div class="btab" data-tab="filters">
+                ⚗ Filters
+                <span class="btab-badge" style="display:none">0</span>
+              </div>
+            </div>
+
+            <div class="tab-pane active" data-tab-id="console">
+              <div class="con-output"></div>
+              <div class="con-input-row">
+                <span class="con-prompt">nessie:~$</span>
+                <input class="con-input" type="text" autocomplete="off"
+                       spellcheck="false" placeholder="type 'help' for commands…">
+              </div>
+            </div>
+
+            <div class="tab-pane" data-tab-id="filters">
+              <div class="filter-bar">
+                <input class="filter-input-txt filter-attr" type="text" placeholder="attribute name">
+                <select class="filter-select filter-op">
+                  <option value="==">==</option>
+                  <option value="!=">!=</option>
+                  <option value="&lt;">&lt;</option>
+                  <option value="&lt;=">&lt;=</option>
+                  <option value="&gt;">&gt;</option>
+                  <option value="&gt;=">&gt;=</option>
+                </select>
+                <input class="filter-input-txt filter-val" type="text" placeholder="value">
+                <button class="filter-apply">Apply</button>
+                <button class="filter-reset">Reset all</button>
+              </div>
+              <div class="filter-stack">
+                <div class="filter-empty">No active filters</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v-handle v-handle-right"></div>
+
+        <!-- RIGHT: Bird View + Properties + Settings -->
+        <div class="col col-right" style="width:240px">
+          <div class="bv-panel" style="height:188px">
+            <div class="panel-hdr"><span class="panel-title">Bird View</span></div>
+            <div class="bv-wrap" style="flex:1">
+              <canvas class="bv-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="props-panel" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+            <div class="panel-hdr"><span class="panel-title">Properties</span></div>
+            <div class="props-body" style="flex:1;overflow-y:auto">
+              <div class="props-empty">Select a node to inspect</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="settings-hdr">
+              <span>⚙ Physics Settings</span>
+              <span class="settings-arrow">▼</span>
+            </div>
+            <div class="settings-body">
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Link Distance</span><span class="cv v-link">120</span></div>
+                <input class="ctrl-slider sl-link" type="range" min="10" max="2000" step="10" value="200">
+              </div>
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Charge</span><span class="cv v-charge">-300</span></div>
+                <input class="ctrl-slider sl-charge" type="range" min="-3000" max="0" step="10" value="-500">
+              </div>
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Collision Padding</span><span class="cv v-coll">20</span></div>
+                <input class="ctrl-slider sl-coll" type="range" min="0" max="300" step="5" value="20">
+              </div>
+              <div class="sim-row">
+                <span>Simulation</span>
+                <div class="toggle on sim-toggle"><div class="toggle-k"></div></div>
+              </div>
+              <div class="settings-reset-row">
+                <button class="reset-btn">Reset defaults</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /layout -->
+    </div><!-- /ws-pane -->
+    <div class="ws-pane active" data-ws-id="ws-express">
+      <div class="layout">
+
+        <!-- LEFT: Tree View -->
+        <div class="col col-left" style="width:220px">
+          <div class="panel" style="flex:1">
+            <div class="panel-hdr">
+              <span class="panel-title">Tree View</span>
+              <div class="panel-actions">
+                <button class="icon-btn btn-expand-all"   title="Expand all">⊞</button>
+                <button class="icon-btn btn-collapse-all" title="Collapse all">⊟</button>
+              </div>
+            </div>
+            <div class="tree-body" style="flex:1;overflow-y:auto">
+              <div class="tree-empty">Load a graph to populate the tree.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v-handle v-handle-left"></div>
+
+        <!-- CENTER: main view + console/filters -->
+        <div class="col col-center">
+
+          <div class="main-view" style="flex:1;min-height:0">
+            <!-- ── Plugin HTML (active workspace only) ── -->
+            <svg id="main-view" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6"
+      refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+  <g id="edges"></g>
+  <g id="nodes"></g>
+</svg>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+<script>
+  alert("BLOCK VISUALISER");
+const GRAPH_DATA = {"name": "express", "type": "directed", "nodes": [{"id": "express", "attributes": {"version": "5.2.1", "description": "Fast, unopinionated, minimalist web framework", "license": "MIT"}}, {"id": "qs", "attributes": {"version": "6.15.0", "description": "A querystring parser that supports nesting and arrays, with a depth limit", "license": "BSD-3-Clause"}}, {"id": "depd", "attributes": {"version": "2.0.0", "description": "Deprecate all the things", "license": "MIT"}}, {"id": "etag", "attributes": {"version": "1.8.1", "description": "Create simple HTTP ETags", "license": "MIT"}}, {"id": "once", "attributes": {"version": "1.4.0", "description": "Run a function exactly one time", "license": "ISC"}}, {"id": "send", "attributes": {"version": "1.2.1", "description": "Better streaming static file server with Range and conditional-GET support", "license": "MIT"}}, {"id": "vary", "attributes": {"version": "1.1.2", "description": "Manipulate the HTTP Vary header", "license": "MIT"}}, {"id": "debug", "attributes": {"version": "4.4.3", "description": "Lightweight debugging utility for Node.js and the browser", "license": "MIT"}}, {"id": "fresh", "attributes": {"version": "0.5.2", "description": "HTTP response freshness testing", "license": "MIT"}}, {"id": "cookie", "attributes": {"version": "1.1.1", "description": "HTTP server cookie parsing and serialization", "license": "MIT"}}, {"id": "router", "attributes": {"version": "2.2.0", "description": "Simple middleware-style router", "license": "MIT"}}, {"id": "accepts", "attributes": {"version": "1.3.8", "description": "Higher-level content negotiation", "license": "MIT"}}, {"id": "type-is", "attributes": {"version": "2.0.1", "description": "Infer the content-type of a request.", "license": "MIT"}}, {"id": "parseurl", "attributes": {"version": "1.3.3", "description": "parse a url with memoization", "license": "MIT"}}, {"id": "statuses", "attributes": {"version": "2.0.2", "description": "HTTP status utility", "license": "MIT"}}, {"id": "encodeurl", "attributes": {"version": "2.0.0", "description": "Encode a URL to a percent-encoded form, excluding already-encoded sequences", "license": "MIT"}}, {"id": "mime-types", "attributes": {"version": "3.0.2", "description": "The ultimate javascript content-type utility.", "license": "MIT"}}, {"id": "proxy-addr", "attributes": {"version": "2.0.7", "description": "Determine address of proxied request", "license": "MIT"}}, {"id": "body-parser", "attributes": {"version": "2.2.2", "description": "Node.js body parsing middleware", "license": "MIT"}}, {"id": "escape-html", "attributes": {"version": "1.0.3", "description": "Escape string for use in HTML", "license": "MIT"}}, {"id": "http-errors", "attributes": {"version": "2.0.1", "description": "Create HTTP error objects", "license": "MIT"}}, {"id": "on-finished", "attributes": {"version": "2.4.1", "description": "Execute a callback when a request closes, finishes, or errors", "license": "MIT"}}, {"id": "content-type", "attributes": {"version": "1.0.5", "description": "Create and parse HTTP Content-Type header", "license": "MIT"}}, {"id": "finalhandler", "attributes": {"version": "2.1.1", "description": "Node.js final http responder", "license": "MIT"}}, {"id": "range-parser", "attributes": {"version": "1.2.1", "description": "Range header field string parser", "license": "MIT"}}, {"id": "serve-static", "attributes": {"version": "2.2.1", "description": "Serve static files", "license": "MIT"}}, {"id": "cookie-signature", "attributes": {"version": "1.2.2", "description": "Sign and unsign cookies", "license": "MIT"}}, {"id": "merge-descriptors", "attributes": {"version": "2.0.0", "description": "Merge objects using their property descriptors", "license": "MIT"}}, {"id": "content-disposition", "attributes": {"version": "1.0.1", "description": "Create and parse Content-Disposition header", "license": "MIT"}}, {"id": "side-channel", "attributes": {"version": "1.1.0", "description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT"}}, {"id": "es-errors", "attributes": {"version": "1.3.0", "description": "A simple cache for a few of the JS Error constructors.", "license": "MIT"}}, {"id": "object-inspect", "attributes": {"version": "1.13.4", "description": "string representations of objects in node and the browser", "license": "MIT"}}, {"id": "side-channel-list", "attributes": {"version": "1.0.0", "description": "Store information about any JS value in a side channel, using a linked list", "license": "MIT"}}, {"id": "side-channel-map", "attributes": {"version": "1.0.1", "description": "Store information about any JS value in a side channel, using a Map", "license": "MIT"}}, {"id": "side-channel-weakmap", "attributes": {"version": "1.0.2", "description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT"}}, {"id": "wrappy", "attributes": {"version": "1.0.2", "description": "Callback wrapping utility", "license": "ISC"}}, {"id": "ms", "attributes": {"version": "2.1.3", "description": "Tiny millisecond conversion utility", "license": "MIT"}}, {"id": "negotiator", "attributes": {"version": "1.0.0", "description": "HTTP content negotiation", "license": "MIT"}}, {"id": "is-promise", "attributes": {"version": "4.0.0", "description": "Test whether an object looks like a promises-a+ promise", "license": "MIT"}}, {"id": "path-to-regexp", "attributes": {"version": "8.3.0", "description": "Express style path to RegExp utility", "license": "MIT"}}, {"id": "media-typer", "attributes": {"version": "1.1.0", "description": "Simple RFC 6838 media type parser and formatter", "license": "MIT"}}, {"id": "forwarded", "attributes": {"version": "0.2.0", "description": "Parse HTTP X-Forwarded-For header", "license": "MIT"}}, {"id": "ipaddr.js", "attributes": {"version": "2.3.0", "description": "A library for manipulating IPv4 and IPv6 addresses in JavaScript.", "license": "MIT"}}, {"id": "inherits", "attributes": {"version": "2.0.4", "description": "Browser-friendly inheritance fully compatible with standard node.js inherits()", "license": "ISC"}}, {"id": "setprototypeof", "attributes": {"version": "1.2.0", "description": "A small polyfill for Object.setprototypeof", "license": "ISC"}}, {"id": "toidentifier", "attributes": {"version": "1.0.1", "description": "Convert a string of words to a JavaScript identifier", "license": "MIT"}}, {"id": "call-bound", "attributes": {"version": "1.0.4", "description": "Robust call-bound JavaScript intrinsics, using `call-bind` and `get-intrinsic`.", "license": "MIT"}}, {"id": "get-intrinsic", "attributes": {"version": "1.3.0", "description": "Get and robustly cache all JS language-level intrinsics at first require time", "license": "MIT"}}, {"id": "bytes", "attributes": {"version": "3.1.2", "description": "Utility to parse a string bytes to bytes and vice-versa", "license": "MIT"}}, {"id": "iconv-lite", "attributes": {"version": "0.7.2", "description": "Convert character encodings in pure javascript.", "license": "MIT"}}, {"id": "raw-body", "attributes": {"version": "3.0.2", "description": "Get and validate the raw body of a readable stream.", "license": "MIT"}}, {"id": "mime-db", "attributes": {"version": "1.54.0", "description": "Media Type Database", "license": "MIT"}}, {"id": "ee-first", "attributes": {"version": "1.1.1", "description": "return the first event in a set of ee/event pairs", "license": "MIT"}}, {"id": "gopd", "attributes": {"version": "1.2.0", "description": "`Object.getOwnPropertyDescriptor`, but accounts for IE's broken implementation.", "license": "MIT"}}, {"id": "hasown", "attributes": {"version": "2.0.2", "description": "A robust, ES3 compatible, \"has own property\" predicate.", "license": "MIT"}}, {"id": "get-proto", "attributes": {"version": "1.0.1", "description": "Robustly get the [[Prototype]] of an object", "license": "MIT"}}, {"id": "has-symbols", "attributes": {"version": "1.1.0", "description": "Determine if the JS environment has Symbol support. Supports spec, or shams.", "license": "MIT"}}, {"id": "function-bind", "attributes": {"version": "1.1.2", "description": "Implementation of Function.prototype.bind", "license": "MIT"}}, {"id": "es-object-atoms", "attributes": {"version": "1.1.1", "description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible", "license": "MIT"}}, {"id": "math-intrinsics", "attributes": {"version": "1.1.0", "description": "ES Math-related intrinsics and helpers, robustly cached.", "license": "MIT"}}, {"id": "es-define-property", "attributes": {"version": "1.0.1", "description": "`Object.defineProperty`, but not IE 8's broken one.", "license": "MIT"}}, {"id": "call-bind-apply-helpers", "attributes": {"version": "1.0.2", "description": "Helper functions around Function call/apply/bind, for use in `call-bind`", "license": "MIT"}}, {"id": "unpipe", "attributes": {"version": "1.0.0", "description": "Unpipe a stream from all destinations", "license": "MIT"}}, {"id": "dunder-proto", "attributes": {"version": "1.0.1", "description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound", "license": "MIT"}}, {"id": "safer-buffer", "attributes": {"version": "2.1.2", "description": "Modern Buffer API polyfill without footguns", "license": "MIT"}}, {"id": "A", "attributes": {"label": "Node A"}}, {"id": "B", "attributes": {"label": "Node B"}}, {"id": "C", "attributes": {"label": "Node C"}}], "edges": [{"id": "e0", "source": "express", "target": "qs", "attributes": {}}, {"id": "e1", "source": "express", "target": "depd", "attributes": {}}, {"id": "e2", "source": "express", "target": "etag", "attributes": {}}, {"id": "e3", "source": "express", "target": "once", "attributes": {}}, {"id": "e4", "source": "express", "target": "send", "attributes": {}}, {"id": "e5", "source": "express", "target": "vary", "attributes": {}}, {"id": "e6", "source": "express", "target": "debug", "attributes": {}}, {"id": "e7", "source": "express", "target": "fresh", "attributes": {}}, {"id": "e8", "source": "express", "target": "cookie", "attributes": {}}, {"id": "e9", "source": "express", "target": "router", "attributes": {}}, {"id": "e10", "source": "express", "target": "accepts", "attributes": {}}, {"id": "e11", "source": "express", "target": "type-is", "attributes": {}}, {"id": "e12", "source": "express", "target": "parseurl", "attributes": {}}, {"id": "e13", "source": "express", "target": "statuses", "attributes": {}}, {"id": "e14", "source": "express", "target": "encodeurl", "attributes": {}}, {"id": "e15", "source": "express", "target": "mime-types", "attributes": {}}, {"id": "e16", "source": "express", "target": "proxy-addr", "attributes": {}}, {"id": "e17", "source": "express", "target": "body-parser", "attributes": {}}, {"id": "e18", "source": "express", "target": "escape-html", "attributes": {}}, {"id": "e19", "source": "express", "target": "http-errors", "attributes": {}}, {"id": "e20", "source": "express", "target": "on-finished", "attributes": {}}, {"id": "e21", "source": "express", "target": "content-type", "attributes": {}}, {"id": "e22", "source": "express", "target": "finalhandler", "attributes": {}}, {"id": "e23", "source": "express", "target": "range-parser", "attributes": {}}, {"id": "e24", "source": "express", "target": "serve-static", "attributes": {}}, {"id": "e25", "source": "express", "target": "cookie-signature", "attributes": {}}, {"id": "e26", "source": "express", "target": "merge-descriptors", "attributes": {}}, {"id": "e27", "source": "express", "target": "content-disposition", "attributes": {}}, {"id": "e28", "source": "qs", "target": "side-channel", "attributes": {}}, {"id": "e29", "source": "side-channel", "target": "es-errors", "attributes": {}}, {"id": "e30", "source": "side-channel", "target": "object-inspect", "attributes": {}}, {"id": "e31", "source": "side-channel", "target": "side-channel-list", "attributes": {}}, {"id": "e32", "source": "side-channel", "target": "side-channel-map", "attributes": {}}, {"id": "e33", "source": "side-channel", "target": "side-channel-weakmap", "attributes": {}}, {"id": "e34", "source": "once", "target": "wrappy", "attributes": {}}, {"id": "e35", "source": "debug", "target": "ms", "attributes": {}}, {"id": "e36", "source": "accepts", "target": "mime-types", "attributes": {}}, {"id": "e37", "source": "accepts", "target": "negotiator", "attributes": {}}, {"id": "e38", "source": "router", "target": "debug", "attributes": {}}, {"id": "e39", "source": "router", "target": "depd", "attributes": {}}, {"id": "e40", "source": "router", "target": "is-promise", "attributes": {}}, {"id": "e41", "source": "router", "target": "parseurl", "attributes": {}}, {"id": "e42", "source": "router", "target": "path-to-regexp", "attributes": {}}, {"id": "e43", "source": "type-is", "target": "content-type", "attributes": {}}, {"id": "e44", "source": "type-is", "target": "media-typer", "attributes": {}}, {"id": "e45", "source": "type-is", "target": "mime-types", "attributes": {}}, {"id": "e46", "source": "serve-static", "target": "encodeurl", "attributes": {}}, {"id": "e47", "source": "serve-static", "target": "escape-html", "attributes": {}}, {"id": "e48", "source": "serve-static", "target": "parseurl", "attributes": {}}, {"id": "e49", "source": "serve-static", "target": "send", "attributes": {}}, {"id": "e50", "source": "proxy-addr", "target": "forwarded", "attributes": {}}, {"id": "e51", "source": "proxy-addr", "target": "ipaddr.js", "attributes": {}}, {"id": "e52", "source": "http-errors", "target": "depd", "attributes": {}}, {"id": "e53", "source": "http-errors", "target": "inherits", "attributes": {}}, {"id": "e54", "source": "http-errors", "target": "setprototypeof", "attributes": {}}, {"id": "e55", "source": "http-errors", "target": "statuses", "attributes": {}}, {"id": "e56", "source": "http-errors", "target": "toidentifier", "attributes": {}}, {"id": "e57", "source": "finalhandler", "target": "debug", "attributes": {}}, {"id": "e58", "source": "finalhandler", "target": "encodeurl", "attributes": {}}, {"id": "e59", "source": "finalhandler", "target": "escape-html", "attributes": {}}, {"id": "e60", "source": "finalhandler", "target": "on-finished", "attributes": {}}, {"id": "e61", "source": "finalhandler", "target": "parseurl", "attributes": {}}, {"id": "e62", "source": "finalhandler", "target": "statuses", "attributes": {}}, {"id": "e63", "source": "side-channel-weakmap", "target": "call-bound", "attributes": {}}, {"id": "e64", "source": "side-channel-weakmap", "target": "es-errors", "attributes": {}}, {"id": "e65", "source": "side-channel-weakmap", "target": "get-intrinsic", "attributes": {}}, {"id": "e66", "source": "side-channel-weakmap", "target": "object-inspect", "attributes": {}}, {"id": "e67", "source": "side-channel-weakmap", "target": "side-channel-map", "attributes": {}}, {"id": "e68", "source": "body-parser", "target": "bytes", "attributes": {}}, {"id": "e69", "source": "body-parser", "target": "content-type", "attributes": {}}, {"id": "e70", "source": "body-parser", "target": "debug", "attributes": {}}, {"id": "e71", "source": "body-parser", "target": "http-errors", "attributes": {}}, {"id": "e72", "source": "body-parser", "target": "iconv-lite", "attributes": {}}, {"id": "e73", "source": "body-parser", "target": "on-finished", "attributes": {}}, {"id": "e74", "source": "body-parser", "target": "qs", "attributes": {}}, {"id": "e75", "source": "body-parser", "target": "raw-body", "attributes": {}}, {"id": "e76", "source": "body-parser", "target": "type-is", "attributes": {}}, {"id": "e77", "source": "mime-types", "target": "mime-db", "attributes": {}}, {"id": "e78", "source": "side-channel-map", "target": "call-bound", "attributes": {}}, {"id": "e79", "source": "side-channel-map", "target": "es-errors", "attributes": {}}, {"id": "e80", "source": "side-channel-map", "target": "get-intrinsic", "attributes": {}}, {"id": "e81", "source": "side-channel-map", "target": "object-inspect", "attributes": {}}, {"id": "e82", "source": "on-finished", "target": "ee-first", "attributes": {}}, {"id": "e83", "source": "get-intrinsic", "target": "gopd", "attributes": {}}, {"id": "e84", "source": "get-intrinsic", "target": "hasown", "attributes": {}}, {"id": "e85", "source": "get-intrinsic", "target": "es-errors", "attributes": {}}, {"id": "e86", "source": "get-intrinsic", "target": "get-proto", "attributes": {}}, {"id": "e87", "source": "get-intrinsic", "target": "has-symbols", "attributes": {}}, {"id": "e88", "source": "get-intrinsic", "target": "function-bind", "attributes": {}}, {"id": "e89", "source": "get-intrinsic", "target": "es-object-atoms", "attributes": {}}, {"id": "e90", "source": "get-intrinsic", "target": "math-intrinsics", "attributes": {}}, {"id": "e91", "source": "get-intrinsic", "target": "es-define-property", "attributes": {}}, {"id": "e92", "source": "get-intrinsic", "target": "call-bind-apply-helpers", "attributes": {}}, {"id": "e93", "source": "call-bound", "target": "call-bind-apply-helpers", "attributes": {}}, {"id": "e94", "source": "call-bound", "target": "get-intrinsic", "attributes": {}}, {"id": "e95", "source": "raw-body", "target": "bytes", "attributes": {}}, {"id": "e96", "source": "raw-body", "target": "unpipe", "attributes": {}}, {"id": "e97", "source": "raw-body", "target": "iconv-lite", "attributes": {}}, {"id": "e98", "source": "raw-body", "target": "http-errors", "attributes": {}}, {"id": "e99", "source": "send", "target": "debug", "attributes": {}}, {"id": "e100", "source": "send", "target": "encodeurl", "attributes": {}}, {"id": "e101", "source": "send", "target": "escape-html", "attributes": {}}, {"id": "e102", "source": "send", "target": "etag", "attributes": {}}, {"id": "e103", "source": "send", "target": "fresh", "attributes": {}}, {"id": "e104", "source": "send", "target": "http-errors", "attributes": {}}, {"id": "e105", "source": "send", "target": "mime-types", "attributes": {}}, {"id": "e106", "source": "send", "target": "ms", "attributes": {}}, {"id": "e107", "source": "send", "target": "on-finished", "attributes": {}}, {"id": "e108", "source": "send", "target": "range-parser", "attributes": {}}, {"id": "e109", "source": "send", "target": "statuses", "attributes": {}}, {"id": "e110", "source": "side-channel-list", "target": "es-errors", "attributes": {}}, {"id": "e111", "source": "side-channel-list", "target": "object-inspect", "attributes": {}}, {"id": "e112", "source": "hasown", "target": "function-bind", "attributes": {}}, {"id": "e113", "source": "call-bind-apply-helpers", "target": "es-errors", "attributes": {}}, {"id": "e114", "source": "call-bind-apply-helpers", "target": "function-bind", "attributes": {}}, {"id": "e115", "source": "es-object-atoms", "target": "es-errors", "attributes": {}}, {"id": "e116", "source": "get-proto", "target": "dunder-proto", "attributes": {}}, {"id": "e117", "source": "get-proto", "target": "es-object-atoms", "attributes": {}}, {"id": "e118", "source": "dunder-proto", "target": "call-bind-apply-helpers", "attributes": {}}, {"id": "e119", "source": "dunder-proto", "target": "es-errors", "attributes": {}}, {"id": "e120", "source": "dunder-proto", "target": "gopd", "attributes": {}}, {"id": "e121", "source": "iconv-lite", "target": "safer-buffer", "attributes": {}}, {"id": "edge2", "source": "A", "target": "B", "attributes": {}}, {"id": "edge3", "source": "B", "target": "C", "attributes": {}}]};
+
+const ROW_H   = 20;
+const PADDING = 12;
+const W       = window.innerWidth  || 0;
+const H       = window.innerHeight || 0;
+
+const layerEdges = d3.select('#edges');
+const layerNodes = d3.select('#nodes');
+const nodeMap    = {};
+
+/* give each node a random start position */
+GRAPH_DATA.nodes.forEach((n, i) => {
+  n.x = Math.random() * W * 0.7 + W * 0.1;
+  n.y = Math.random() * H * 0.7 + H * 0.1;
+});
+
+/* ── build node groups ───────────────────────────────────────────── */
+const nodeGroups = layerNodes.selectAll('.node')
+  .data(GRAPH_DATA.nodes)
+  .join('g')
+  .attr('class',     'node')
+  .attr('node',      '')            /* CONTRACT: physics finds nodes by this */
+  .attr('transform', d => `translate(${d.x},${d.y})`);
+
+nodeGroups.each(function(d) {
+  const g     = d3.select(this);
+  const attrs = Object.entries(d.attributes || {});
+  const texts = [];
+
+  texts.push(
+    g.append('text')
+      .attr('font-size',   '13px')
+      .attr('font-weight', 'bold')
+      .attr('font-family', 'monospace')
+      .attr('fill',        '#ffffff')
+      .text(d.id)
+  );
+
+  attrs.forEach(([k, v]) => {
+    texts.push(
+      g.append('text')
+        .attr('font-size',   '11px')
+        .attr('font-family', 'monospace')
+        .attr('fill',        '#ffffff')
+        .text(`${k}: ${v}`)
+    );
+  });
+
+  let maxWidth = 0;
+  texts.forEach(t => {
+    const w = t.node().getBBox().width;
+    if (w > maxWidth) maxWidth = w;
+  });
+
+  const width  = maxWidth + PADDING * 2;
+  const height = texts.length * ROW_H + PADDING * 1.5;
+  d.width  = width;
+  d.height = height;
+
+  g.insert('rect', ':first-child')
+    .attr('width',        width)
+    .attr('height',       height)
+    .attr('rx',           4)
+    .attr('fill',         '#1e2130')
+    .attr('stroke',       '#3b82f6')
+    .attr('stroke-width', 1.5);
+
+  g.insert('rect', 'text')
+    .attr('width',  width)
+    .attr('height', ROW_H + 6)
+    .attr('rx',     4)
+    .attr('fill',   '#3b82f6');
+
+  texts.forEach((t, i) => {
+    t.attr('x', PADDING).attr('y', ROW_H + i * ROW_H);
+  });
+
+  nodeMap[d.id] = d;
+});
+
+
+const nodeIndex = {};
+GRAPH_DATA.nodes.forEach((n, i) => { nodeIndex[n.id] = i; });
+
+layerEdges.selectAll('.edge')
+  .data(GRAPH_DATA.edges)
+  .join('line')
+  .attr('edge', '')            /* CONTRACT: physics finds edges by this */
+  .attr('class',        'edge')
+  .attr('stroke',       '#475569')
+  .attr('stroke-width', 1.5)
+  .attr('marker-end',   'url(#arrowhead)')
+  .attr('data-source',  d => nodeIndex[d.source])  
+  .attr('data-target',  d => nodeIndex[d.target])  
+  .attr('x1', d => nodeMap[d.source].x + nodeMap[d.source].width  / 2)
+  .attr('y1', d => nodeMap[d.source].y + nodeMap[d.source].height / 2)
+  .attr('x2', d => nodeMap[d.target].x + nodeMap[d.target].width  / 2)
+  .attr('y2', d => nodeMap[d.target].y + nodeMap[d.target].height / 2);
+</script>
+
+            <div class="graph-empty">
+              <div class="ei">⬡</div>
+              <div class="em">No graph loaded</div>
+              <div class="eh">Waiting for graph data…</div>
+            </div>
+
+            <div class="filter-banner">
+              <span class="filter-banner-txt">⚗ Filter active</span>
+              <button class="fb-clear">✕ Clear all</button>
+            </div>
+
+            <div class="zoom-ctrls">
+              <button class="zoom-btn zoom-in">+</button>
+              <button class="zoom-btn zoom-fit">⊡</button>
+              <button class="zoom-btn zoom-out">−</button>
+            </div>
+          </div>
+
+          <div class="h-handle"></div>
+
+          <div class="bottom-pane" style="height:190px;flex-basis:190px;flex-grow:0;flex-shrink:0">
+            <div class="btabs">
+              <div class="btab active" data-tab="console">▶ Console</div>
+              <div class="btab" data-tab="filters">
+                ⚗ Filters
+                <span class="btab-badge" style="display:none">0</span>
+              </div>
+            </div>
+
+            <div class="tab-pane active" data-tab-id="console">
+              <div class="con-output"></div>
+              <div class="con-input-row">
+                <span class="con-prompt">nessie:~$</span>
+                <input class="con-input" type="text" autocomplete="off"
+                       spellcheck="false" placeholder="type 'help' for commands…">
+              </div>
+            </div>
+
+            <div class="tab-pane" data-tab-id="filters">
+              <div class="filter-bar">
+                <input class="filter-input-txt filter-attr" type="text" placeholder="attribute name">
+                <select class="filter-select filter-op">
+                  <option value="==">==</option>
+                  <option value="!=">!=</option>
+                  <option value="&lt;">&lt;</option>
+                  <option value="&lt;=">&lt;=</option>
+                  <option value="&gt;">&gt;</option>
+                  <option value="&gt;=">&gt;=</option>
+                </select>
+                <input class="filter-input-txt filter-val" type="text" placeholder="value">
+                <button class="filter-apply">Apply</button>
+                <button class="filter-reset">Reset all</button>
+              </div>
+              <div class="filter-stack">
+                <div class="filter-empty">No active filters</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v-handle v-handle-right"></div>
+
+        <!-- RIGHT: Bird View + Properties + Settings -->
+        <div class="col col-right" style="width:240px">
+          <div class="bv-panel" style="height:188px">
+            <div class="panel-hdr"><span class="panel-title">Bird View</span></div>
+            <div class="bv-wrap" style="flex:1">
+              <canvas class="bv-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="props-panel" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+            <div class="panel-hdr"><span class="panel-title">Properties</span></div>
+            <div class="props-body" style="flex:1;overflow-y:auto">
+              <div class="props-empty">Select a node to inspect</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="settings-hdr">
+              <span>⚙ Physics Settings</span>
+              <span class="settings-arrow">▼</span>
+            </div>
+            <div class="settings-body">
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Link Distance</span><span class="cv v-link">120</span></div>
+                <input class="ctrl-slider sl-link" type="range" min="10" max="2000" step="10" value="200">
+              </div>
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Charge</span><span class="cv v-charge">-300</span></div>
+                <input class="ctrl-slider sl-charge" type="range" min="-3000" max="0" step="10" value="-500">
+              </div>
+              <div class="ctrl">
+                <div class="ctrl-row"><span class="cl">Collision Padding</span><span class="cv v-coll">20</span></div>
+                <input class="ctrl-slider sl-coll" type="range" min="0" max="300" step="5" value="20">
+              </div>
+              <div class="sim-row">
+                <span>Simulation</span>
+                <div class="toggle on sim-toggle"><div class="toggle-k"></div></div>
+              </div>
+              <div class="settings-reset-row">
+                <button class="reset-btn">Reset defaults</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /layout -->
+    </div><!-- /ws-pane -->
+  </div>
+
+  <!-- ── Status Bar ────────────────────────────────────────────── -->
+  <div id="statusbar">
+    <div class="sb-item">
+      <span class="sb-dot" id="sb-dot"></span>
+      <span id="sb-status">No graph loaded</span>
+    </div>
+    <div class="sb-sep"></div>
+    <div class="sb-item" id="sb-stats" style="display:none">
+      <span class="sb-acc" id="sb-n">0</span>n ·
+      <span class="sb-acc" id="sb-e">0</span>e
+    </div>
+    <div class="sb-sep" id="sb-sep2" style="display:none"></div>
+    <div class="sb-item" id="sb-sel" style="display:none">
+      ◆ <span class="sb-acc" id="sb-sel-id"></span>
+    </div>
+    <span class="sb-spacer"></span>
+    <div class="sb-item" id="sb-zoom-item" style="display:none">
+      <span id="sb-zoom">100%</span>
+    </div>
+    <div class="sb-sep"></div>
+    <div class="sb-item">
+      <span class="sb-grn">●</span> <span id="sb-plugin-label">—</span>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Resize drag overlay -->
+<div id="drag-overlay"></div>
+
+<!-- ── Server-injected state ─────────────────────────────────── -->
+<script>
+window.NESSIE_SERVER_STATE = {"activeWorkspaceIndex": 2, "workspaces": [{"graphData": {"active_filters": [{"attr_name": "test", "operator": "==", "value": "value"}, {"attr_name": "test2", "operator": "\u003e", "value": "value2"}], "console_messages": [{"message": "This is an info message", "type": "info"}, {"message": "input 1", "type": "input"}, {"message": "This is a warning message", "type": "warn"}, {"message": "input 2", "type": "input"}, {"message": "This is an error message", "type": "error"}, {"message": "input 3", "type": "input"}, {"message": "This is an ok message", "type": "ok"}, {"message": "input 4", "type": "input"}, {"message": "This is an warning message", "type": "warn"}], "edges": [{"attributes": {}, "id": "e0", "source": "mysql", "target": "bignumber.js"}, {"attributes": {}, "id": "e1", "source": "mysql", "target": "readable-stream"}, {"attributes": {}, "id": "e2", "source": "mysql", "target": "safe-buffer"}, {"attributes": {}, "id": "e3", "source": "mysql", "target": "sqlstring"}, {"attributes": {}, "id": "e4", "source": "readable-stream", "target": "abort-controller"}, {"attributes": {}, "id": "e5", "source": "readable-stream", "target": "buffer"}, {"attributes": {}, "id": "e6", "source": "readable-stream", "target": "events"}, {"attributes": {}, "id": "e7", "source": "readable-stream", "target": "process"}, {"attributes": {}, "id": "e8", "source": "readable-stream", "target": "string_decoder"}, {"attributes": {}, "id": "e9", "source": "string_decoder", "target": "safe-buffer"}, {"attributes": {}, "id": "e10", "source": "buffer", "target": "base64-js"}, {"attributes": {}, "id": "e11", "source": "buffer", "target": "ieee754"}, {"attributes": {}, "id": "e12", "source": "abort-controller", "target": "event-target-shim"}], "name": "mysql", "nodes": [{"attributes": {"description": "A node.js driver for mysql. It is written in JavaScript, does not require compiling, and is 100% MIT licensed.", "license": "MIT", "version": "2.18.1"}, "id": "mysql"}, {"attributes": {"description": "A library for arbitrary-precision decimal and non-decimal arithmetic", "license": "MIT", "version": "10.0.2"}, "id": "bignumber.js"}, {"attributes": {"description": "Node.js Streams, a user-land copy of the stream library from Node.js", "license": "MIT", "version": "4.7.0"}, "id": "readable-stream"}, {"attributes": {"description": "Safer Node.js Buffer API", "license": "MIT", "version": "5.2.1"}, "id": "safe-buffer"}, {"attributes": {"description": "Simple SQL escape and format for MySQL", "license": "MIT", "version": "2.3.3"}, "id": "sqlstring"}, {"attributes": {"description": "An implementation of WHATWG AbortController interface.", "license": "MIT", "version": "3.0.0"}, "id": "abort-controller"}, {"attributes": {"description": "Node.js Buffer API, for the browser", "license": "MIT", "version": "6.0.3"}, "id": "buffer"}, {"attributes": {"description": "Node\u0027s event emitter for all engines.", "license": "MIT", "version": "3.3.0"}, "id": "events"}, {"attributes": {"description": "process information for node.js and browsers", "license": "MIT", "version": "0.11.10"}, "id": "process"}, {"attributes": {"description": "The string_decoder module from Node core", "license": "MIT", "version": "1.3.0"}, "id": "string_decoder"}, {"attributes": {"description": "Base64 encoding/decoding in pure JS", "license": "MIT", "version": "1.5.1"}, "id": "base64-js"}, {"attributes": {"description": "Read/write IEEE754 floating point numbers from/to a Buffer or array-like object", "license": "BSD-3-Clause", "version": "1.2.1"}, "id": "ieee754"}, {"attributes": {"description": "An implementation of WHATWG EventTarget interface.", "license": "MIT", "version": "6.0.2"}, "id": "event-target-shim"}], "type": "directed"}, "id": "ws-mysql", "name": "mysql"}, {"graphData": {"active_filters": [{"attr_name": "test", "operator": "==", "value": "value"}, {"attr_name": "test2", "operator": "\u003e", "value": "value2"}], "console_messages": [{"message": "This is an info message", "type": "info"}, {"message": "input 1", "type": "input"}, {"message": "This is a warning message", "type": "warn"}, {"message": "input 2", "type": "input"}, {"message": "This is an error message", "type": "error"}, {"message": "input 3", "type": "input"}, {"message": "This is an ok message", "type": "ok"}, {"message": "input 4", "type": "input"}, {"message": "This is an warning message", "type": "warn"}], "edges": [{"attributes": {}, "id": "e0", "source": "axios", "target": "follow-redirects"}, {"attributes": {}, "id": "e1", "source": "axios", "target": "form-data"}, {"attributes": {}, "id": "e2", "source": "axios", "target": "proxy-from-env"}, {"attributes": {}, "id": "e3", "source": "form-data", "target": "asynckit"}, {"attributes": {}, "id": "e4", "source": "form-data", "target": "combined-stream"}, {"attributes": {}, "id": "e5", "source": "form-data", "target": "es-set-tostringtag"}, {"attributes": {}, "id": "e6", "source": "form-data", "target": "hasown"}, {"attributes": {}, "id": "e7", "source": "form-data", "target": "mime-types"}, {"attributes": {}, "id": "e8", "source": "combined-stream", "target": "delayed-stream"}, {"attributes": {}, "id": "e9", "source": "hasown", "target": "function-bind"}, {"attributes": {}, "id": "e10", "source": "mime-types", "target": "mime-db"}, {"attributes": {}, "id": "e11", "source": "es-set-tostringtag", "target": "es-errors"}, {"attributes": {}, "id": "e12", "source": "es-set-tostringtag", "target": "get-intrinsic"}, {"attributes": {}, "id": "e13", "source": "es-set-tostringtag", "target": "has-tostringtag"}, {"attributes": {}, "id": "e14", "source": "es-set-tostringtag", "target": "hasown"}, {"attributes": {}, "id": "e15", "source": "get-intrinsic", "target": "gopd"}, {"attributes": {}, "id": "e16", "source": "get-intrinsic", "target": "hasown"}, {"attributes": {}, "id": "e17", "source": "get-intrinsic", "target": "es-errors"}, {"attributes": {}, "id": "e18", "source": "get-intrinsic", "target": "get-proto"}, {"attributes": {}, "id": "e19", "source": "get-intrinsic", "target": "has-symbols"}, {"attributes": {}, "id": "e20", "source": "get-intrinsic", "target": "function-bind"}, {"attributes": {}, "id": "e21", "source": "get-intrinsic", "target": "es-object-atoms"}, {"attributes": {}, "id": "e22", "source": "get-intrinsic", "target": "math-intrinsics"}, {"attributes": {}, "id": "e23", "source": "get-intrinsic", "target": "es-define-property"}, {"attributes": {}, "id": "e24", "source": "get-intrinsic", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e25", "source": "has-tostringtag", "target": "has-symbols"}, {"attributes": {}, "id": "e26", "source": "es-object-atoms", "target": "es-errors"}, {"attributes": {}, "id": "e27", "source": "call-bind-apply-helpers", "target": "es-errors"}, {"attributes": {}, "id": "e28", "source": "call-bind-apply-helpers", "target": "function-bind"}, {"attributes": {}, "id": "e29", "source": "get-proto", "target": "dunder-proto"}, {"attributes": {}, "id": "e30", "source": "get-proto", "target": "es-object-atoms"}, {"attributes": {}, "id": "e31", "source": "dunder-proto", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e32", "source": "dunder-proto", "target": "es-errors"}, {"attributes": {}, "id": "e33", "source": "dunder-proto", "target": "gopd"}], "name": "axios", "nodes": [{"attributes": {"description": "Promise based HTTP client for the browser and node.js", "license": "MIT", "version": "1.13.6"}, "id": "axios"}, {"attributes": {"description": "HTTP and HTTPS modules that follow redirects.", "license": "MIT", "version": "1.15.11"}, "id": "follow-redirects"}, {"attributes": {"description": "A library to create readable \"multipart/form-data\" streams. Can be used to submit forms and file uploads to other web applications.", "license": "MIT", "version": "4.0.5"}, "id": "form-data"}, {"attributes": {"description": "Offers getProxyForUrl to get the proxy URL for a URL, respecting the *_PROXY (e.g. HTTP_PROXY) and NO_PROXY environment variables.", "license": "MIT", "version": "2.0.0"}, "id": "proxy-from-env"}, {"attributes": {"description": "Minimal async jobs utility library, with streams support", "license": "MIT", "version": "0.5.0"}, "id": "asynckit"}, {"attributes": {"description": "A stream that emits multiple other streams one after another.", "license": "MIT", "version": "1.0.8"}, "id": "combined-stream"}, {"attributes": {"description": "A helper to optimistically set Symbol.toStringTag, when possible.", "license": "MIT", "version": "2.1.0"}, "id": "es-set-tostringtag"}, {"attributes": {"description": "A robust, ES3 compatible, \"has own property\" predicate.", "license": "MIT", "version": "2.0.2"}, "id": "hasown"}, {"attributes": {"description": "The ultimate javascript content-type utility.", "license": "MIT", "version": "3.0.2"}, "id": "mime-types"}, {"attributes": {"description": "Buffers events from a stream until you are ready to handle them.", "license": "MIT", "version": "1.0.0"}, "id": "delayed-stream"}, {"attributes": {"description": "Implementation of Function.prototype.bind", "license": "MIT", "version": "1.1.2"}, "id": "function-bind"}, {"attributes": {"description": "Media Type Database", "license": "MIT", "version": "1.54.0"}, "id": "mime-db"}, {"attributes": {"description": "A simple cache for a few of the JS Error constructors.", "license": "MIT", "version": "1.3.0"}, "id": "es-errors"}, {"attributes": {"description": "Get and robustly cache all JS language-level intrinsics at first require time", "license": "MIT", "version": "1.3.0"}, "id": "get-intrinsic"}, {"attributes": {"description": "Determine if the JS environment has `Symbol.toStringTag` support. Supports spec, or shams.", "license": "MIT", "version": "1.0.2"}, "id": "has-tostringtag"}, {"attributes": {"description": "`Object.getOwnPropertyDescriptor`, but accounts for IE\u0027s broken implementation.", "license": "MIT", "version": "1.2.0"}, "id": "gopd"}, {"attributes": {"description": "Robustly get the [[Prototype]] of an object", "license": "MIT", "version": "1.0.1"}, "id": "get-proto"}, {"attributes": {"description": "Determine if the JS environment has Symbol support. Supports spec, or shams.", "license": "MIT", "version": "1.1.0"}, "id": "has-symbols"}, {"attributes": {"description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible", "license": "MIT", "version": "1.1.1"}, "id": "es-object-atoms"}, {"attributes": {"description": "ES Math-related intrinsics and helpers, robustly cached.", "license": "MIT", "version": "1.1.0"}, "id": "math-intrinsics"}, {"attributes": {"description": "`Object.defineProperty`, but not IE 8\u0027s broken one.", "license": "MIT", "version": "1.0.1"}, "id": "es-define-property"}, {"attributes": {"description": "Helper functions around Function call/apply/bind, for use in `call-bind`", "license": "MIT", "version": "1.0.2"}, "id": "call-bind-apply-helpers"}, {"attributes": {"description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound", "license": "MIT", "version": "1.0.1"}, "id": "dunder-proto"}], "type": "directed"}, "id": "ws-axios", "name": "axios"}, {"graphData": {"active_filters": [{"attr_name": "test", "operator": "==", "value": "value"}, {"attr_name": "test2", "operator": "\u003e", "value": "value2"}], "console_messages": [{"message": "This is an info message", "type": "info"}, {"message": "input 1", "type": "input"}, {"message": "This is a warning message", "type": "warn"}, {"message": "input 2", "type": "input"}, {"message": "This is an error message", "type": "error"}, {"message": "input 3", "type": "input"}, {"message": "This is an ok message", "type": "ok"}, {"message": "input 4", "type": "input"}, {"message": "This is an warning message", "type": "warn"}], "edges": [{"attributes": {}, "id": "e0", "source": "express", "target": "qs"}, {"attributes": {}, "id": "e1", "source": "express", "target": "depd"}, {"attributes": {}, "id": "e2", "source": "express", "target": "etag"}, {"attributes": {}, "id": "e3", "source": "express", "target": "once"}, {"attributes": {}, "id": "e4", "source": "express", "target": "send"}, {"attributes": {}, "id": "e5", "source": "express", "target": "vary"}, {"attributes": {}, "id": "e6", "source": "express", "target": "debug"}, {"attributes": {}, "id": "e7", "source": "express", "target": "fresh"}, {"attributes": {}, "id": "e8", "source": "express", "target": "cookie"}, {"attributes": {}, "id": "e9", "source": "express", "target": "router"}, {"attributes": {}, "id": "e10", "source": "express", "target": "accepts"}, {"attributes": {}, "id": "e11", "source": "express", "target": "type-is"}, {"attributes": {}, "id": "e12", "source": "express", "target": "parseurl"}, {"attributes": {}, "id": "e13", "source": "express", "target": "statuses"}, {"attributes": {}, "id": "e14", "source": "express", "target": "encodeurl"}, {"attributes": {}, "id": "e15", "source": "express", "target": "mime-types"}, {"attributes": {}, "id": "e16", "source": "express", "target": "proxy-addr"}, {"attributes": {}, "id": "e17", "source": "express", "target": "body-parser"}, {"attributes": {}, "id": "e18", "source": "express", "target": "escape-html"}, {"attributes": {}, "id": "e19", "source": "express", "target": "http-errors"}, {"attributes": {}, "id": "e20", "source": "express", "target": "on-finished"}, {"attributes": {}, "id": "e21", "source": "express", "target": "content-type"}, {"attributes": {}, "id": "e22", "source": "express", "target": "finalhandler"}, {"attributes": {}, "id": "e23", "source": "express", "target": "range-parser"}, {"attributes": {}, "id": "e24", "source": "express", "target": "serve-static"}, {"attributes": {}, "id": "e25", "source": "express", "target": "cookie-signature"}, {"attributes": {}, "id": "e26", "source": "express", "target": "merge-descriptors"}, {"attributes": {}, "id": "e27", "source": "express", "target": "content-disposition"}, {"attributes": {}, "id": "e28", "source": "qs", "target": "side-channel"}, {"attributes": {}, "id": "e29", "source": "side-channel", "target": "es-errors"}, {"attributes": {}, "id": "e30", "source": "side-channel", "target": "object-inspect"}, {"attributes": {}, "id": "e31", "source": "side-channel", "target": "side-channel-list"}, {"attributes": {}, "id": "e32", "source": "side-channel", "target": "side-channel-map"}, {"attributes": {}, "id": "e33", "source": "side-channel", "target": "side-channel-weakmap"}, {"attributes": {}, "id": "e34", "source": "once", "target": "wrappy"}, {"attributes": {}, "id": "e35", "source": "debug", "target": "ms"}, {"attributes": {}, "id": "e36", "source": "accepts", "target": "mime-types"}, {"attributes": {}, "id": "e37", "source": "accepts", "target": "negotiator"}, {"attributes": {}, "id": "e38", "source": "router", "target": "debug"}, {"attributes": {}, "id": "e39", "source": "router", "target": "depd"}, {"attributes": {}, "id": "e40", "source": "router", "target": "is-promise"}, {"attributes": {}, "id": "e41", "source": "router", "target": "parseurl"}, {"attributes": {}, "id": "e42", "source": "router", "target": "path-to-regexp"}, {"attributes": {}, "id": "e43", "source": "type-is", "target": "content-type"}, {"attributes": {}, "id": "e44", "source": "type-is", "target": "media-typer"}, {"attributes": {}, "id": "e45", "source": "type-is", "target": "mime-types"}, {"attributes": {}, "id": "e46", "source": "serve-static", "target": "encodeurl"}, {"attributes": {}, "id": "e47", "source": "serve-static", "target": "escape-html"}, {"attributes": {}, "id": "e48", "source": "serve-static", "target": "parseurl"}, {"attributes": {}, "id": "e49", "source": "serve-static", "target": "send"}, {"attributes": {}, "id": "e50", "source": "proxy-addr", "target": "forwarded"}, {"attributes": {}, "id": "e51", "source": "proxy-addr", "target": "ipaddr.js"}, {"attributes": {}, "id": "e52", "source": "http-errors", "target": "depd"}, {"attributes": {}, "id": "e53", "source": "http-errors", "target": "inherits"}, {"attributes": {}, "id": "e54", "source": "http-errors", "target": "setprototypeof"}, {"attributes": {}, "id": "e55", "source": "http-errors", "target": "statuses"}, {"attributes": {}, "id": "e56", "source": "http-errors", "target": "toidentifier"}, {"attributes": {}, "id": "e57", "source": "finalhandler", "target": "debug"}, {"attributes": {}, "id": "e58", "source": "finalhandler", "target": "encodeurl"}, {"attributes": {}, "id": "e59", "source": "finalhandler", "target": "escape-html"}, {"attributes": {}, "id": "e60", "source": "finalhandler", "target": "on-finished"}, {"attributes": {}, "id": "e61", "source": "finalhandler", "target": "parseurl"}, {"attributes": {}, "id": "e62", "source": "finalhandler", "target": "statuses"}, {"attributes": {}, "id": "e63", "source": "side-channel-weakmap", "target": "call-bound"}, {"attributes": {}, "id": "e64", "source": "side-channel-weakmap", "target": "es-errors"}, {"attributes": {}, "id": "e65", "source": "side-channel-weakmap", "target": "get-intrinsic"}, {"attributes": {}, "id": "e66", "source": "side-channel-weakmap", "target": "object-inspect"}, {"attributes": {}, "id": "e67", "source": "side-channel-weakmap", "target": "side-channel-map"}, {"attributes": {}, "id": "e68", "source": "body-parser", "target": "bytes"}, {"attributes": {}, "id": "e69", "source": "body-parser", "target": "content-type"}, {"attributes": {}, "id": "e70", "source": "body-parser", "target": "debug"}, {"attributes": {}, "id": "e71", "source": "body-parser", "target": "http-errors"}, {"attributes": {}, "id": "e72", "source": "body-parser", "target": "iconv-lite"}, {"attributes": {}, "id": "e73", "source": "body-parser", "target": "on-finished"}, {"attributes": {}, "id": "e74", "source": "body-parser", "target": "qs"}, {"attributes": {}, "id": "e75", "source": "body-parser", "target": "raw-body"}, {"attributes": {}, "id": "e76", "source": "body-parser", "target": "type-is"}, {"attributes": {}, "id": "e77", "source": "mime-types", "target": "mime-db"}, {"attributes": {}, "id": "e78", "source": "side-channel-map", "target": "call-bound"}, {"attributes": {}, "id": "e79", "source": "side-channel-map", "target": "es-errors"}, {"attributes": {}, "id": "e80", "source": "side-channel-map", "target": "get-intrinsic"}, {"attributes": {}, "id": "e81", "source": "side-channel-map", "target": "object-inspect"}, {"attributes": {}, "id": "e82", "source": "on-finished", "target": "ee-first"}, {"attributes": {}, "id": "e83", "source": "get-intrinsic", "target": "gopd"}, {"attributes": {}, "id": "e84", "source": "get-intrinsic", "target": "hasown"}, {"attributes": {}, "id": "e85", "source": "get-intrinsic", "target": "es-errors"}, {"attributes": {}, "id": "e86", "source": "get-intrinsic", "target": "get-proto"}, {"attributes": {}, "id": "e87", "source": "get-intrinsic", "target": "has-symbols"}, {"attributes": {}, "id": "e88", "source": "get-intrinsic", "target": "function-bind"}, {"attributes": {}, "id": "e89", "source": "get-intrinsic", "target": "es-object-atoms"}, {"attributes": {}, "id": "e90", "source": "get-intrinsic", "target": "math-intrinsics"}, {"attributes": {}, "id": "e91", "source": "get-intrinsic", "target": "es-define-property"}, {"attributes": {}, "id": "e92", "source": "get-intrinsic", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e93", "source": "call-bound", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e94", "source": "call-bound", "target": "get-intrinsic"}, {"attributes": {}, "id": "e95", "source": "raw-body", "target": "bytes"}, {"attributes": {}, "id": "e96", "source": "raw-body", "target": "unpipe"}, {"attributes": {}, "id": "e97", "source": "raw-body", "target": "iconv-lite"}, {"attributes": {}, "id": "e98", "source": "raw-body", "target": "http-errors"}, {"attributes": {}, "id": "e99", "source": "send", "target": "debug"}, {"attributes": {}, "id": "e100", "source": "send", "target": "encodeurl"}, {"attributes": {}, "id": "e101", "source": "send", "target": "escape-html"}, {"attributes": {}, "id": "e102", "source": "send", "target": "etag"}, {"attributes": {}, "id": "e103", "source": "send", "target": "fresh"}, {"attributes": {}, "id": "e104", "source": "send", "target": "http-errors"}, {"attributes": {}, "id": "e105", "source": "send", "target": "mime-types"}, {"attributes": {}, "id": "e106", "source": "send", "target": "ms"}, {"attributes": {}, "id": "e107", "source": "send", "target": "on-finished"}, {"attributes": {}, "id": "e108", "source": "send", "target": "range-parser"}, {"attributes": {}, "id": "e109", "source": "send", "target": "statuses"}, {"attributes": {}, "id": "e110", "source": "side-channel-list", "target": "es-errors"}, {"attributes": {}, "id": "e111", "source": "side-channel-list", "target": "object-inspect"}, {"attributes": {}, "id": "e112", "source": "hasown", "target": "function-bind"}, {"attributes": {}, "id": "e113", "source": "call-bind-apply-helpers", "target": "es-errors"}, {"attributes": {}, "id": "e114", "source": "call-bind-apply-helpers", "target": "function-bind"}, {"attributes": {}, "id": "e115", "source": "es-object-atoms", "target": "es-errors"}, {"attributes": {}, "id": "e116", "source": "get-proto", "target": "dunder-proto"}, {"attributes": {}, "id": "e117", "source": "get-proto", "target": "es-object-atoms"}, {"attributes": {}, "id": "e118", "source": "dunder-proto", "target": "call-bind-apply-helpers"}, {"attributes": {}, "id": "e119", "source": "dunder-proto", "target": "es-errors"}, {"attributes": {}, "id": "e120", "source": "dunder-proto", "target": "gopd"}, {"attributes": {}, "id": "e121", "source": "iconv-lite", "target": "safer-buffer"}, {"attributes": {}, "id": "edge2", "source": "A", "target": "B"}, {"attributes": {}, "id": "edge3", "source": "B", "target": "C"}], "name": "express", "nodes": [{"attributes": {"description": "Fast, unopinionated, minimalist web framework", "license": "MIT", "version": "5.2.1"}, "id": "express"}, {"attributes": {"description": "A querystring parser that supports nesting and arrays, with a depth limit", "license": "BSD-3-Clause", "version": "6.15.0"}, "id": "qs"}, {"attributes": {"description": "Deprecate all the things", "license": "MIT", "version": "2.0.0"}, "id": "depd"}, {"attributes": {"description": "Create simple HTTP ETags", "license": "MIT", "version": "1.8.1"}, "id": "etag"}, {"attributes": {"description": "Run a function exactly one time", "license": "ISC", "version": "1.4.0"}, "id": "once"}, {"attributes": {"description": "Better streaming static file server with Range and conditional-GET support", "license": "MIT", "version": "1.2.1"}, "id": "send"}, {"attributes": {"description": "Manipulate the HTTP Vary header", "license": "MIT", "version": "1.1.2"}, "id": "vary"}, {"attributes": {"description": "Lightweight debugging utility for Node.js and the browser", "license": "MIT", "version": "4.4.3"}, "id": "debug"}, {"attributes": {"description": "HTTP response freshness testing", "license": "MIT", "version": "0.5.2"}, "id": "fresh"}, {"attributes": {"description": "HTTP server cookie parsing and serialization", "license": "MIT", "version": "1.1.1"}, "id": "cookie"}, {"attributes": {"description": "Simple middleware-style router", "license": "MIT", "version": "2.2.0"}, "id": "router"}, {"attributes": {"description": "Higher-level content negotiation", "license": "MIT", "version": "1.3.8"}, "id": "accepts"}, {"attributes": {"description": "Infer the content-type of a request.", "license": "MIT", "version": "2.0.1"}, "id": "type-is"}, {"attributes": {"description": "parse a url with memoization", "license": "MIT", "version": "1.3.3"}, "id": "parseurl"}, {"attributes": {"description": "HTTP status utility", "license": "MIT", "version": "2.0.2"}, "id": "statuses"}, {"attributes": {"description": "Encode a URL to a percent-encoded form, excluding already-encoded sequences", "license": "MIT", "version": "2.0.0"}, "id": "encodeurl"}, {"attributes": {"description": "The ultimate javascript content-type utility.", "license": "MIT", "version": "3.0.2"}, "id": "mime-types"}, {"attributes": {"description": "Determine address of proxied request", "license": "MIT", "version": "2.0.7"}, "id": "proxy-addr"}, {"attributes": {"description": "Node.js body parsing middleware", "license": "MIT", "version": "2.2.2"}, "id": "body-parser"}, {"attributes": {"description": "Escape string for use in HTML", "license": "MIT", "version": "1.0.3"}, "id": "escape-html"}, {"attributes": {"description": "Create HTTP error objects", "license": "MIT", "version": "2.0.1"}, "id": "http-errors"}, {"attributes": {"description": "Execute a callback when a request closes, finishes, or errors", "license": "MIT", "version": "2.4.1"}, "id": "on-finished"}, {"attributes": {"description": "Create and parse HTTP Content-Type header", "license": "MIT", "version": "1.0.5"}, "id": "content-type"}, {"attributes": {"description": "Node.js final http responder", "license": "MIT", "version": "2.1.1"}, "id": "finalhandler"}, {"attributes": {"description": "Range header field string parser", "license": "MIT", "version": "1.2.1"}, "id": "range-parser"}, {"attributes": {"description": "Serve static files", "license": "MIT", "version": "2.2.1"}, "id": "serve-static"}, {"attributes": {"description": "Sign and unsign cookies", "license": "MIT", "version": "1.2.2"}, "id": "cookie-signature"}, {"attributes": {"description": "Merge objects using their property descriptors", "license": "MIT", "version": "2.0.0"}, "id": "merge-descriptors"}, {"attributes": {"description": "Create and parse Content-Disposition header", "license": "MIT", "version": "1.0.1"}, "id": "content-disposition"}, {"attributes": {"description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT", "version": "1.1.0"}, "id": "side-channel"}, {"attributes": {"description": "A simple cache for a few of the JS Error constructors.", "license": "MIT", "version": "1.3.0"}, "id": "es-errors"}, {"attributes": {"description": "string representations of objects in node and the browser", "license": "MIT", "version": "1.13.4"}, "id": "object-inspect"}, {"attributes": {"description": "Store information about any JS value in a side channel, using a linked list", "license": "MIT", "version": "1.0.0"}, "id": "side-channel-list"}, {"attributes": {"description": "Store information about any JS value in a side channel, using a Map", "license": "MIT", "version": "1.0.1"}, "id": "side-channel-map"}, {"attributes": {"description": "Store information about any JS value in a side channel. Uses WeakMap if available.", "license": "MIT", "version": "1.0.2"}, "id": "side-channel-weakmap"}, {"attributes": {"description": "Callback wrapping utility", "license": "ISC", "version": "1.0.2"}, "id": "wrappy"}, {"attributes": {"description": "Tiny millisecond conversion utility", "license": "MIT", "version": "2.1.3"}, "id": "ms"}, {"attributes": {"description": "HTTP content negotiation", "license": "MIT", "version": "1.0.0"}, "id": "negotiator"}, {"attributes": {"description": "Test whether an object looks like a promises-a+ promise", "license": "MIT", "version": "4.0.0"}, "id": "is-promise"}, {"attributes": {"description": "Express style path to RegExp utility", "license": "MIT", "version": "8.3.0"}, "id": "path-to-regexp"}, {"attributes": {"description": "Simple RFC 6838 media type parser and formatter", "license": "MIT", "version": "1.1.0"}, "id": "media-typer"}, {"attributes": {"description": "Parse HTTP X-Forwarded-For header", "license": "MIT", "version": "0.2.0"}, "id": "forwarded"}, {"attributes": {"description": "A library for manipulating IPv4 and IPv6 addresses in JavaScript.", "license": "MIT", "version": "2.3.0"}, "id": "ipaddr.js"}, {"attributes": {"description": "Browser-friendly inheritance fully compatible with standard node.js inherits()", "license": "ISC", "version": "2.0.4"}, "id": "inherits"}, {"attributes": {"description": "A small polyfill for Object.setprototypeof", "license": "ISC", "version": "1.2.0"}, "id": "setprototypeof"}, {"attributes": {"description": "Convert a string of words to a JavaScript identifier", "license": "MIT", "version": "1.0.1"}, "id": "toidentifier"}, {"attributes": {"description": "Robust call-bound JavaScript intrinsics, using `call-bind` and `get-intrinsic`.", "license": "MIT", "version": "1.0.4"}, "id": "call-bound"}, {"attributes": {"description": "Get and robustly cache all JS language-level intrinsics at first require time", "license": "MIT", "version": "1.3.0"}, "id": "get-intrinsic"}, {"attributes": {"description": "Utility to parse a string bytes to bytes and vice-versa", "license": "MIT", "version": "3.1.2"}, "id": "bytes"}, {"attributes": {"description": "Convert character encodings in pure javascript.", "license": "MIT", "version": "0.7.2"}, "id": "iconv-lite"}, {"attributes": {"description": "Get and validate the raw body of a readable stream.", "license": "MIT", "version": "3.0.2"}, "id": "raw-body"}, {"attributes": {"description": "Media Type Database", "license": "MIT", "version": "1.54.0"}, "id": "mime-db"}, {"attributes": {"description": "return the first event in a set of ee/event pairs", "license": "MIT", "version": "1.1.1"}, "id": "ee-first"}, {"attributes": {"description": "`Object.getOwnPropertyDescriptor`, but accounts for IE\u0027s broken implementation.", "license": "MIT", "version": "1.2.0"}, "id": "gopd"}, {"attributes": {"description": "A robust, ES3 compatible, \"has own property\" predicate.", "license": "MIT", "version": "2.0.2"}, "id": "hasown"}, {"attributes": {"description": "Robustly get the [[Prototype]] of an object", "license": "MIT", "version": "1.0.1"}, "id": "get-proto"}, {"attributes": {"description": "Determine if the JS environment has Symbol support. Supports spec, or shams.", "license": "MIT", "version": "1.1.0"}, "id": "has-symbols"}, {"attributes": {"description": "Implementation of Function.prototype.bind", "license": "MIT", "version": "1.1.2"}, "id": "function-bind"}, {"attributes": {"description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible", "license": "MIT", "version": "1.1.1"}, "id": "es-object-atoms"}, {"attributes": {"description": "ES Math-related intrinsics and helpers, robustly cached.", "license": "MIT", "version": "1.1.0"}, "id": "math-intrinsics"}, {"attributes": {"description": "`Object.defineProperty`, but not IE 8\u0027s broken one.", "license": "MIT", "version": "1.0.1"}, "id": "es-define-property"}, {"attributes": {"description": "Helper functions around Function call/apply/bind, for use in `call-bind`", "license": "MIT", "version": "1.0.2"}, "id": "call-bind-apply-helpers"}, {"attributes": {"description": "Unpipe a stream from all destinations", "license": "MIT", "version": "1.0.0"}, "id": "unpipe"}, {"attributes": {"description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound", "license": "MIT", "version": "1.0.1"}, "id": "dunder-proto"}, {"attributes": {"description": "Modern Buffer API polyfill without footguns", "license": "MIT", "version": "2.1.2"}, "id": "safer-buffer"}, {"attributes": {"label": "Node A"}, "id": "A"}, {"attributes": {"label": "Node B"}, "id": "B"}, {"attributes": {"label": "Node C"}, "id": "C"}], "type": "directed"}, "id": "ws-express", "name": "express"}]};
+</script>
+
+<!-- ── Application scripts ───────────────────────────────────── -->
+<script>
+/* ── js/resize.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   resize.js — Drag-to-resize panel handles.
+
+   Modes:
+     'col'       — left column (drag right = wider)
+     'col-right' — right column (drag left = wider)
+     'row'       — bottom pane height (drag up = taller)
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+function setupResizeHandle(handle, target, mode, min, max) {
+  if (!handle || !target) return;
+
+  const overlay = document.getElementById('drag-overlay');
+  let startX, startY, startSize;
+
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    handle.classList.add('dragging');
+    overlay.classList.add('active');
+    overlay.style.cursor = mode === 'row' ? 'row-resize' : 'col-resize';
+
+    if (mode === 'row') { startY = e.clientY; startSize = target.offsetHeight; }
+    else                { startX = e.clientX; startSize = target.offsetWidth;  }
+
+    function onMove(ev) {
+      let size;
+      if (mode === 'row') {
+        size = Math.max(min, Math.min(max, startSize - (ev.clientY - startY)));
+        target.style.height     = size + 'px';
+      } else if (mode === 'col-right') {
+        size = Math.max(min, Math.min(max, startSize - (ev.clientX - startX)));
+        target.style.width      = size + 'px';
+      } else {
+        size = Math.max(min, Math.min(max, startSize + (ev.clientX - startX)));
+        target.style.width      = size + 'px';
+      }
+      target.style.flexBasis  = size + 'px';
+      target.style.flexGrow   = '0';
+      target.style.flexShrink = '0';
+    }
+
+    function onUp() {
+      handle.classList.remove('dragging');
+      overlay.classList.remove('active');
+      overlay.style.cursor = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup',   onUp);
+      /* Redraw birdview after resize */
+      const ws = activeWs();
+      if (ws && ws.nodes.length) setTimeout(() => updateBirdview(ws), 0);
+      debouncedSave();
+    }
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup',   onUp);
+  });
+}
+
+
+
+/* ── js/settings.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   settings.js — Per-workspace physics settings:
+                 sliders, sim toggle, reset button.
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+const DEFAULTS = { link: 200, charge: -500, coll: 20 };
+
+function wireSettingsControls(ws) {
+  const p = ws.pane;
+
+  /* Collapsible settings header */
+  p.querySelector('.settings-hdr').addEventListener('click', () => {
+    const open = p.querySelector('.settings-body').classList.toggle('open');
+    p.querySelector('.settings-arrow').classList.toggle('open', open);
+  });
+
+  /* Link distance slider */
+  p.querySelector('.sl-link').addEventListener('input', e => {
+    ws.simParams.link = +e.target.value;
+    p.querySelector('.v-link').textContent = ws.simParams.link;
+    reloadSim(ws);
+  });
+
+  /* Charge slider */
+  p.querySelector('.sl-charge').addEventListener('input', e => {
+    ws.simParams.charge = +e.target.value;
+    p.querySelector('.v-charge').textContent = ws.simParams.charge;
+    reloadSim(ws);
+  });
+
+  /* Collision padding slider */
+  p.querySelector('.sl-coll').addEventListener('input', e => {
+    ws.simParams.coll = +e.target.value;
+    p.querySelector('.v-coll').textContent = ws.simParams.coll;
+    reloadSim(ws);
+  });
+
+  /* Simulation on/off toggle */
+  p.querySelector('.sim-toggle').addEventListener('click', function() {
+    ws.simRunning = !ws.simRunning;
+    this.classList.toggle('on', ws.simRunning);
+    if (ws.sim) ws.simRunning ? ws.sim.restart() : ws.sim.stop();
+  });
+
+  /* Reset button */
+  p.querySelector('.reset-btn').addEventListener('click', () => resetSim(ws));
+}
+
+function reloadSim(ws) {
+  if (!ws.sim) return;
+  ws.sim.force('link').distance(ws.simParams.link);
+  ws.sim.force('charge').strength(ws.simParams.charge);
+  ws.sim.force('collision').radius(n => Math.max(n.w, n.h) * 0.6 + ws.simParams.coll);
+  ws.sim.alpha(.3).restart();
+}
+
+function resetSim(ws) {
+  ws.simParams = { ...DEFAULTS };
+  const p = ws.pane;
+  p.querySelector('.sl-link').value    = DEFAULTS.link;
+  p.querySelector('.sl-charge').value  = DEFAULTS.charge;
+  p.querySelector('.sl-coll').value    = DEFAULTS.coll;
+  p.querySelector('.v-link').textContent   = DEFAULTS.link;
+  p.querySelector('.v-charge').textContent = DEFAULTS.charge;
+  p.querySelector('.v-coll').textContent   = DEFAULTS.coll;
+  reloadSim(ws);
+  conLog(ws, 'Simulation reset to defaults.', 'ok');
+}
+
+
+
+/* ── js/properties.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   properties.js — Right sidebar: Properties panel.
+                   Renders node attributes and edge lists.
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+function showProperties(ws, id) {
+  const node = ws.nodes.find(n => n.id === id);
+  if (!node) return;
+
+  const out = ws.edges.filter(e => e.source.id === id);
+  const inc = ws.edges.filter(e => e.target.id === id);
+
+  let html = `
+    <div class="props-node-hdr">
+      <div class="props-node-id">${node.id}</div>
+      <div class="props-node-meta">${out.length} out · ${inc.length} in</div>
+    </div>`;
+
+  const attrs = Object.entries(node.attributes || {});
+  if (attrs.length) {
+    html += '<div class="props-sec-hdr">Attributes</div>';
+    attrs.forEach(([k, v]) => {
+      html += `<div class="props-row">
+        <span class="pk">${k}</span>
+        <span class="pv">${v}</span>
+      </div>`;
+    });
+  }
+
+  if (out.length) {
+    html += '<div class="props-sec-hdr">Outgoing</div>';
+    out.forEach(e => {
+      html += `<div class="edge-row" data-goto="${e.target.id}">
+        <span class="eout">→</span>
+        <span class="etgt">${e.target.id}</span>
+        ${e.label ? `<span class="elbl">${e.label}</span>` : ''}
+      </div>`;
+    });
+  }
+
+  if (inc.length) {
+    html += '<div class="props-sec-hdr">Incoming</div>';
+    inc.forEach(e => {
+      html += `<div class="edge-row" data-goto="${e.source.id}">
+        <span class="ein">←</span>
+        <span class="etgt">${e.source.id}</span>
+        ${e.label ? `<span class="elbl">${e.label}</span>` : ''}
+      </div>`;
+    });
+  }
+
+  ws.propsBody.innerHTML = html;
+  ws.propsBody.querySelectorAll('.edge-row').forEach(el =>
+    el.addEventListener('click', () => selectNode(ws, el.dataset.goto))
+  );
+}
+
+function clearProperties(ws) {
+  ws.propsBody.innerHTML = '<div class="props-empty">Select a node to inspect</div>';
+}
+
+
+
+/* ── js/filters.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   filters.js — Node attribute filters.
+
+   Active filters come from the server (adapter.get_active_filters_at).
+   Apply / remove trigger a TODO alert — backend integration pending.
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+function wireFilterControls(ws) {
+  const p = ws.pane;
+
+  /* Apply — clear attr field, alert TODO */
+  p.querySelector('.filter-apply').addEventListener('click', () => {
+    const attrEl = p.querySelector('.filter-attr');
+    const attr   = attrEl.value.trim();
+    const op     = p.querySelector('.filter-op').value;
+    const val    = p.querySelector('.filter-val').value.trim();
+    attrEl.value = '';
+    if (!attr || !val) { conLog(ws, 'Enter attribute name and value.', 'warn'); return; }
+    // TODO: send filter to backend
+    alert(`TODO: Apply filter — ${attr} ${op} ${val}`);
+  });
+
+  /* Enter key in value field triggers apply */
+  p.querySelector('.filter-val').addEventListener('keydown', e => {
+    if (e.key === 'Enter') p.querySelector('.filter-apply').click();
+  });
+
+  /* Reset all — TODO */
+  p.querySelector('.filter-reset').addEventListener('click', () => {
+    // TODO: send clear-all-filters to backend
+    alert('TODO: Clear all filters');
+  });
+}
+
+/* ── Called from removeFilter onclick in refreshFilterStack ─── */
+function removeFilter(wsId, i) {
+  // TODO: send remove filter at index i to backend
+  alert(`TODO: Remove filter at index ${i}`);
+}
+
+/* ── Rebuild filter stack from ws.activeFilters ─────────────── */
+function refreshFilterStack(ws) {
+  const badge = ws.filterBadge;
+  badge.textContent   = ws.activeFilters.length;
+  badge.style.display = ws.activeFilters.length ? 'inline-flex' : 'none';
+
+  if (!ws.activeFilters.length) {
+    ws.filterStack.innerHTML = '<div class="filter-empty">No active filters</div>';
+    return;
+  }
+
+  ws.filterStack.innerHTML = ws.activeFilters.map((f, i) => `
+    <div class="filter-card">
+      <span class="fc-expr">${f.attr_name} ${f.operator} ${f.value}</span>
+      <button class="fc-rm" onclick="removeFilter('${ws.id}',${i})">✕</button>
+    </div>`
+  ).join('');
+}
+
+/* ── Load server-provided filters into ws.activeFilters ─────── */
+function loadServerFilters(ws, graphData) {
+  ws.activeFilters = (graphData.active_filters || []);
+  refreshFilterStack(ws);
+}
+
+
+
+/* ── js/console.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   console.js — Per-workspace console panel.
+   Messages and inputs come from the server.
+   User input is sent back to the server (TODO).
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+/* ── Wire console controls ───────────────────────────────────── */
+function wireConsoleControls(ws) {
+  const ci = ws.pane.querySelector('.con-input');
+  const history = []; let histIdx = -1;
+  ws._conHistory = history; // exposed so loadServerConsoleMessages can prepopulate
+
+  ci.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const v = ci.value.trim(); if (!v) return;
+      history.unshift(v); histIdx = -1; ci.value = '';
+      conLog(ws, `nessie:~$ ${v}`, 'input');
+      // TODO: send command to server
+      alert(`TODO: Send command to server — ${v}`);
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (histIdx < history.length - 1) ci.value = history[++histIdx];
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      ci.value = histIdx > 0 ? history[--histIdx] : (histIdx = -1, '');
+    }
+  });
+  ws.conOutput.addEventListener('click', () => ci.focus());
+}
+
+/* ── Append a plain log line ─────────────────────────────────── */
+function conLog(ws, msg, type = 'info', ts = null) {
+  const el = document.createElement('div');
+  el.className = `con-line ${type}`;
+  const tsStr = ts || new Date().toTimeString().slice(0, 8);
+  el.innerHTML = `<span class="con-ts">${tsStr}</span><span class="con-msg">${msg}</span>`;
+  ws.conOutput.appendChild(el);
+  ws.conOutput.scrollTop = ws.conOutput.scrollHeight;
+}
+
+/* ── Append an input prompt row (click → populate console input) */
+function conInput(ws, m) {
+  const el = document.createElement('div');
+  el.className = 'con-line con-input-row';
+  const ts = m.timestamp || new Date().toTimeString().slice(0, 8);
+
+  el.innerHTML = `
+    <span class="con-ts">${ts}</span>
+    <span class="con-prompt-arrow">▶</span>
+    <span class="con-input-label">${m.message}</span>`;
+
+  el.title = 'Click to populate input';
+  el.addEventListener('click', () => {
+    const ci = ws.pane.querySelector('.con-input');
+    ci.value = m.message;
+    ci.focus();
+  });
+
+  ws.conOutput.appendChild(el);
+  ws.conOutput.scrollTop = ws.conOutput.scrollHeight;
+}
+
+/* ── Load server-provided console messages ───────────────────── */
+function loadServerConsoleMessages(ws, graphData) {
+  (graphData.console_messages || []).forEach(m => {
+    if (m.type === 'input') {
+      conInput(ws, m);
+      // unshift so arrow-up shows the last INPUT first
+      if (ws._conHistory) ws._conHistory.unshift(m.message);
+    } else {
+      conLog(ws, m.message, m.type || 'info', m.timestamp);
+    }
+  });
+}
+
+
+
+/* ── js/tree-view.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   tree-view.js — Left sidebar: BFS tree grouped by connected
+                  component, root = node with fewest in-edges.
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+/* ── Wire expand/collapse buttons ────────────────────────────── */
+function wireTreeControls(ws) {
+  const p = ws.pane;
+  p.querySelector('.btn-expand-all').addEventListener('click', () => {
+    p.querySelectorAll('.tree-children').forEach(el => el.classList.add('open'));
+    p.querySelectorAll('.tree-toggle').forEach(el => el.classList.add('open'));
+  });
+  p.querySelector('.btn-collapse-all').addEventListener('click', () => {
+    p.querySelectorAll('.tree-children').forEach(el => el.classList.remove('open'));
+    p.querySelectorAll('.tree-toggle').forEach(el => el.classList.remove('open'));
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   buildTree
+   ════════════════════════════════════════════════════════════════ */
+function buildTree(ws, data) {
+  const container = ws.treeBody;
+  container.innerHTML = '';
+
+  if (!data.nodes || !data.nodes.length) {
+    container.querySelector('.tree-empty') ||
+      (container.innerHTML = '<div class="tree-empty">No nodes.</div>');
+    return;
+  }
+
+  const directed = data.type === 'directed';
+
+  /* ── Degree maps ─────────────────────────────────────────────── */
+  // inDeg[id]  = number of edges pointing INTO id
+  // outDeg[id] = number of edges going OUT of id
+  const inDeg  = {}, outDeg = {};
+  data.nodes.forEach(n => { inDeg[n.id] = 0; outDeg[n.id] = 0; });
+
+  // outAdj[id] = [targetId, ...] — used for BFS traversal
+  // undirAdj[id] = [neighborId, ...] — used for component detection
+  const outAdj   = {}, undirAdj = {};
+  data.nodes.forEach(n => { outAdj[n.id] = []; undirAdj[n.id] = []; });
+
+  (data.edges || []).forEach(e => {
+    const s = e.source, t = e.target;
+    if (!inDeg.hasOwnProperty(s) || !inDeg.hasOwnProperty(t)) return;
+    outDeg[s]++;
+    inDeg[t]++;
+    outAdj[s].push(t);
+    undirAdj[s].push(t);
+    undirAdj[t].push(s);
+    if (!directed) {
+      // undirected: symmetric
+      outDeg[t]++;
+      inDeg[s]++;
+      outAdj[t].push(s);
+    }
+  });
+
+  /* ── Connected components (undirected BFS) ───────────────────── */
+  const visited   = new Set();
+  const components = [];
+
+  data.nodes.forEach(n => {
+    if (visited.has(n.id)) return;
+    const comp = [];
+    const queue = [n.id];
+    visited.add(n.id);
+    while (queue.length) {
+      const cur = queue.shift();
+      comp.push(cur);
+      undirAdj[cur].forEach(nb => {
+        if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+      });
+    }
+    components.push(comp);
+  });
+
+  /* ── Root selection per component ────────────────────────────── */
+  function pickRoot(ids) {
+    return ids.slice().sort((a, b) => {
+      if (inDeg[a] !== inDeg[b]) return inDeg[a] - inDeg[b];   // fewer in-edges first
+      if (outDeg[b] !== outDeg[a]) return outDeg[b] - outDeg[a]; // more out-edges first
+      return String(a) < String(b) ? -1 : 1;                    // smaller id first
+    })[0];
+  }
+
+  /* ── Render ──────────────────────────────────────────────────── */
+  // globalPlaced tracks ids already rendered anywhere in the tree
+  // (used to detect cross-refs)
+  const globalPlaced = new Set();
+
+  components.forEach((compIds, ci) => {
+    const root = pickRoot(compIds);
+
+    // Component wrapper
+    const compWrap = document.createElement('div');
+    compWrap.className = 'tree-component';
+
+    _bfsRender(root, compWrap, 0);
+
+    container.appendChild(compWrap);
+  });
+
+  /* ── BFS render ──────────────────────────────────────────────── */
+  function _bfsRender(rootId, parentEl, _unused) {
+    // BFS queue: { id, parentEl, depth }
+    const queue = [{ id: rootId, parentEl, depth: 0 }];
+
+    while (queue.length) {
+      const { id, parentEl: pEl, depth } = queue.shift();
+
+      const isRef = globalPlaced.has(id);
+      globalPlaced.add(id);
+
+      const children = !isRef ? outAdj[id] : [];
+
+      const row      = _makeRow(id, depth, isRef, children.length > 0);
+      pEl.appendChild(row);
+
+      if (!isRef && children.length) {
+        const kidsEl = document.createElement('div');
+        kidsEl.className = 'tree-children open';
+        pEl.appendChild(kidsEl);
+
+        // Wire toggle
+        const toggle = row.querySelector('.tree-toggle');
+        if (toggle) {
+          toggle.addEventListener('click', e => {
+            e.stopPropagation();
+            const open = kidsEl.classList.toggle('open');
+            toggle.classList.toggle('open', open);
+          });
+        }
+
+        children.forEach(childId => {
+          queue.push({ id: childId, parentEl: kidsEl, depth: depth + 1 });
+        });
+      }
+    }
+  }
+
+  /* ── Build one row element ───────────────────────────────────── */
+  function _makeRow(id, depth, isRef, hasChildren) {
+    const row = document.createElement('div');
+    row.dataset.id = id;
+
+    const indent = 8 + depth * 14;
+
+    if (isRef) {
+      // Cross-reference: styled differently, click scrolls to original
+      row.className = 'tree-node tree-ref';
+      row.style.paddingLeft = indent + 'px';
+      row.innerHTML = `
+        <span class="tree-ref-arrow">↩</span>
+        <span class="tree-label">${id}</span>`;
+      row.title = 'Already shown above — click to select';
+      row.addEventListener('click', () => {
+        selectNode(ws, id);
+        // Scroll to the original row in the tree
+        const orig = container.querySelector(`.tree-node:not(.tree-ref)[data-id="${id}"]`);
+        if (orig) orig.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    } else {
+      row.className = 'tree-node';
+      row.style.paddingLeft = indent + 'px';
+      row.innerHTML = `
+        ${hasChildren ? '<span class="tree-toggle open">▶</span>' : '<span class="tree-leaf"></span>'}
+        <span class="tree-label">${id}</span>`;
+      row.addEventListener('click', e => {
+        if (e.target.classList.contains('tree-toggle')) return;
+        selectNode(ws, id);
+      });
+    }
+
+    return row;
+  }
+}
+
+
+
+/* ── js/birdview.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   birdview.js — Right sidebar: canvas minimap.
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+function wireBirdviewControls(ws) {
+  const p      = ws.pane;
+  const bvWrap = p.querySelector('.bv-wrap');
+
+  p.querySelector('.bv-canvas').addEventListener('click', e => {
+    if (!ws.zoom || !ws.nodes.length || !ws._bv) return;
+    const rect = bvWrap.getBoundingClientRect();
+    panToMinimap(ws, e.clientX - rect.left, e.clientY - rect.top);
+  });
+
+  const ro = new ResizeObserver(() => {
+    if (ws.nodes.length) updateBirdview(ws);
+  });
+  ro.observe(bvWrap);
+  if (ws.svgEl) ro.observe(ws.svgEl);
+}
+
+function updateBirdview(ws) {
+  const canvas = ws.bvCanvas;
+  const wrap   = canvas.parentElement;
+  const ctx    = canvas.getContext('2d');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+  if (!ws.nodes.length) return;
+
+  /* Use n.w / n.h (our node format) */
+  const validNodes = ws.nodes.filter(n => isFinite(n.x) && isFinite(n.y));
+  if (!validNodes.length) return;
+
+  const P    = 10;
+  const minX = Math.min(...validNodes.map(n => n.x));
+  const maxX = Math.max(...validNodes.map(n => n.x + n.w));
+  const minY = Math.min(...validNodes.map(n => n.y));
+  const maxY = Math.max(...validNodes.map(n => n.y + n.h));
+  const gW   = Math.max(1, maxX - minX), gH = Math.max(1, maxY - minY);
+  const s    = Math.min((W - P*2) / gW, (H - P*2) / gH);
+  const ox   = P + (W - P*2 - gW*s) / 2;
+  const oy   = P + (H - P*2 - gH*s) / 2;
+  ws._bv = { s, ox, oy, minX, minY };
+
+  const bx = x => ox + (x - minX) * s;
+  const by = y => oy + (y - minY) * s;
+
+  /* Edges */
+  ctx.strokeStyle = 'rgba(50,54,63,.9)'; ctx.lineWidth = .8;
+  ws.edges.forEach(e => {
+    const src = e.source, tgt = e.target;
+    if (typeof src !== 'object' || typeof tgt !== 'object') return;
+    if (!isFinite(src.x) || !isFinite(tgt.x)) return;
+    ctx.beginPath();
+    ctx.moveTo(bx(_ncx(src)), by(_ncy(src)));
+    ctx.lineTo(bx(_ncx(tgt)), by(_ncy(tgt)));
+    ctx.stroke();
+  });
+
+  /* Nodes */
+  validNodes.forEach(n => {
+    const nx = bx(n.x), ny = by(n.y);
+    const nw = Math.max(4, n.w * s), nh = Math.max(3, n.h * s);
+    ctx.fillStyle   = n.id === ws.selectedId ? 'rgba(0,217,255,.1)' : '#181b22';
+    ctx.strokeStyle = n.id === ws.selectedId ? '#00d9ff'            : '#32363f';
+    ctx.lineWidth   = n.id === ws.selectedId ? 1.2 : .7;
+    rrRect(ctx, nx, ny, nw, nh, 1);
+    ctx.fill(); ctx.stroke();
+  });
+
+  /* Viewport rectangle */
+  if (!ws.svgEl) return;
+  const svgW = ws.svgEl.clientWidth  || 900;
+  const svgH = ws.svgEl.clientHeight || 600;
+  const t    = ws.transform || d3.zoomIdentity;
+  if (!isFinite(t.x) || !isFinite(t.y) || !isFinite(t.k) || t.k === 0) return;
+  const vpX = (-t.x / t.k - minX) * s + ox;
+  const vpY = (-t.y / t.k - minY) * s + oy;
+  const vpW = (svgW / t.k) * s;
+  const vpH = (svgH / t.k) * s;
+  ctx.strokeStyle = 'rgba(0,217,255,.7)'; ctx.fillStyle = 'rgba(0,217,255,.04)';
+  ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  rrRect(ctx, vpX, vpY, Math.max(6, vpW), Math.max(6, vpH), 2);
+  ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+}
+
+function rrRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y); ctx.closePath();
+}
+
+function panToMinimap(ws, mx, my) {
+  if (!ws._bv || !ws.svgEl || !ws.zoom) return;
+  const { s, ox, oy, minX, minY } = ws._bv;
+  if (!isFinite(s) || s === 0) return;
+  const gx   = (mx - ox) / s + minX;
+  const gy   = (my - oy) / s + minY;
+  const svgW = ws.svgEl.clientWidth  || 900;
+  const svgH = ws.svgEl.clientHeight || 600;
+  const k    = (ws.transform || d3.zoomIdentity).k;
+  if (!isFinite(gx) || !isFinite(gy) || !isFinite(k)) return;
+  const target = d3.zoomIdentity
+    .translate(svgW / 2 - gx * k, svgH / 2 - gy * k)
+    .scale(k);
+  d3.select(ws.svgEl).transition().duration(300).call(ws.zoom.transform, target);
+}
+
+
+
+/* ── js/graph.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   graph.js — D3 force simulation over plugin-rendered SVG.
+
+   The plugin has ALREADY rendered nodes and edges into:
+     #main-view  (the SVG root)
+     #nodes      (group containing elements with [node] attr)
+     #edges      (group containing elements with [edge] attr)
+
+   This file only moves what the plugin drew — never re-renders.
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+/* ── Top-level geometry helpers ───────────────────────────────── */
+function _ncx(n) { return n.tag === 'circle' || n.tag === 'ellipse' ? n.x + n.rx : n.x + n.w / 2; }
+function _ncy(n) { return n.tag === 'circle' || n.tag === 'ellipse' ? n.y + n.ry : n.y + n.h / 2; }
+
+function _nodeExit(n, ux, uy) {
+  if (n.tag === 'circle' || n.tag === 'ellipse')
+    return { x: _ncx(n) + ux * n.rx, y: _ncy(n) + uy * n.ry };
+  const s = Math.min(
+    ux ? (n.w / 2) / Math.abs(ux) : Infinity,
+    uy ? (n.h / 2) / Math.abs(uy) : Infinity
+  );
+  return { x: _ncx(n) + ux * s, y: _ncy(n) + uy * s };
+}
+
+/* s and t are node objects (after forceLink mutation) */
+function _edgePts(s, t) {
+  const dx = _ncx(t) - _ncx(s), dy = _ncy(t) - _ncy(s);
+  const len = Math.hypot(dx, dy);
+  if (len < 1) return { x1: _ncx(s), y1: _ncy(s), x2: _ncx(t), y2: _ncy(t) };
+  const ux = dx / len, uy = dy / len;
+  const p1 = _nodeExit(s,  ux,  uy);
+  const p2 = _nodeExit(t, -ux, -uy);
+  return { x1: p1.x, y1: p1.y, x2: p2.x - ux * 3, y2: p2.y - uy * 3 };
+}
+
+function _pf(v, fallback) {
+  const n = parseFloat(v);
+  return isFinite(n) ? n : fallback;
+}
+
+function _readNode(el) {
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'circle' || tag === 'ellipse') {
+    const rx = _pf(el.getAttribute('rx') ?? el.getAttribute('r'), 10);
+    const ry = _pf(el.getAttribute('ry') ?? el.getAttribute('r'), 10);
+    const cx = _pf(el.getAttribute('cx'), 0);
+    const cy = _pf(el.getAttribute('cy'), 0);
+    return { el, tag, x: cx - rx, y: cy - ry, w: rx * 2, h: ry * 2, rx, ry };
+  }
+  if (tag === 'g') {
+    const tf = el.getAttribute('transform') || '';
+    const m  = tf.match(/translate\(\s*([^,\s)]+)[,\s]+([^)]+)\)/);
+    const x  = m ? _pf(m[1], 0) : 0;
+    const y  = m ? _pf(m[2], 0) : 0;
+    let w = 20, h = 20;
+    el.querySelectorAll('rect').forEach(r => {
+      const rw = _pf(r.getAttribute('width'),  0);
+      const rh = _pf(r.getAttribute('height'), 0);
+      if (rw * rh > w * h) { w = rw; h = rh; }
+    });
+    return { el, tag, x, y, w, h };
+  }
+  return {
+    el, tag,
+    x: _pf(el.getAttribute('x'),      0),
+    y: _pf(el.getAttribute('y'),      0),
+    w: _pf(el.getAttribute('width'),  20),
+    h: _pf(el.getAttribute('height'), 20),
+  };
+}
+
+/* ════════════════════════════════════════════════════════════════
+   loadGraph
+   ════════════════════════════════════════════════════════════════ */
+function loadGraph(ws, data) {
+  ws.graphData = data;
+  ws.pane.querySelector('.graph-empty').style.display = 'none';
+
+  const svgEl = ws.svgEl;
+  if (!svgEl) return;
+
+  const nodesContainer = svgEl.querySelector('#nodes');
+  const edgesContainer = svgEl.querySelector('#edges');
+
+  if (!nodesContainer) return;
+
+  /* ── Nodes: elements with [node] attribute ───────────────────── */
+  ws.nodes = [...nodesContainer.querySelectorAll('[node]')].map((el, i) => {
+    const n    = _readNode(el);
+    n.id       = el.dataset.id || (data.nodes[i] && data.nodes[i].id) || String(i);
+    n.attributes = (data.nodes[i] && data.nodes[i].attributes) || {};
+    return n;
+  });
+
+  /* ── Edges: elements with [edge] attribute ───────────────────── */
+  /* source/target stored as integer indices; forceLink will mutate
+     them into node object references after the first tick.         */
+  ws.edges = [];
+  if (edgesContainer) {
+    [...edgesContainer.querySelectorAll('[edge]')].forEach((el, i) => {
+      const si = parseInt(el.getAttribute('data-source'), 10);
+      const ti = parseInt(el.getAttribute('data-target'), 10);
+      if (isNaN(si) || isNaN(ti) || !ws.nodes[si] || !ws.nodes[ti] || si === ti) return;
+      ws.edges.push({ id: `e${i}`, el, source: si, target: ti });
+    });
+  }
+
+  /* ── Zoom — per-layer so plugin's coordinate system is preserved  */
+  let currentTransform = d3.zoomIdentity;
+  ws.zoom = d3.zoom()
+    .scaleExtent([0.05, 8])
+    .filter(ev => ev.type === 'wheel' || !ev.target.closest('[node]'))
+    .on('zoom', ev => {
+      currentTransform = ev.transform;
+      if (nodesContainer) d3.select(nodesContainer).attr('transform', ev.transform);
+      if (edgesContainer) d3.select(edgesContainer).attr('transform', ev.transform);
+      ws.transform = ev.transform;
+      updateBirdview(ws);
+      if (ws.id === activeWsId)
+        document.getElementById('sb-zoom').textContent =
+          Math.round(ev.transform.k * 100) + '%';
+    });
+  d3.select(svgEl).call(ws.zoom).on('dblclick.zoom', null);
+  d3.select(svgEl).on('click', () => selectNode(ws, null));
+
+  /* ── Drag ─────────────────────────────────────────────────────── */
+  function clientToSVG(cx, cy) {
+    const rect = svgEl.getBoundingClientRect();
+    return {
+      x: (cx - rect.left - currentTransform.x) / currentTransform.k,
+      y: (cy - rect.top  - currentTransform.y) / currentTransform.k,
+    };
+  }
+
+  const drag = d3.drag()
+    .on('start', function(ev) {
+      ev.sourceEvent.stopPropagation();
+      const n = d3.select(this).datum();
+      if (!ev.active) ws.sim.alphaTarget(0.3).restart();
+      n.fx = n.x; n.fy = n.y;
+      d3.select(this).style('cursor', 'grabbing').raise();
+    })
+    .on('drag', function(ev) {
+      const n   = d3.select(this).datum();
+      const pos = clientToSVG(ev.sourceEvent.clientX, ev.sourceEvent.clientY);
+      n.fx = pos.x - n.w / 2;
+      n.fy = pos.y - n.h / 2;
+    })
+    .on('end', function(ev) {
+      const n = d3.select(this).datum();
+      if (!ev.active) ws.sim.alphaTarget(0);
+      n.fx = null; n.fy = null;
+      d3.select(this).style('cursor', 'grab');
+    });
+
+  ws.nodes.forEach(n => {
+    d3.select(n.el).datum(n).style('cursor', 'grab').call(drag)
+      .on('click',     (ev) => { ev.stopPropagation(); selectNode(ws, n.id); })
+      .on('mouseover', ()   => hlNode(ws, n.id))
+      .on('mouseout',  ()   => clearHl(ws));
+  });
+
+  /* ── Force simulation ─────────────────────────────────────────── */
+  const mainView = ws.pane.querySelector('.main-view');
+  const W = svgEl.clientWidth  || mainView?.clientWidth  || 900;
+  const H = svgEl.clientHeight || mainView?.clientHeight || 600;
+  const avgSize = ws.nodes.reduce((s, n) => s + Math.max(n.w, n.h), 0) / (ws.nodes.length || 1);
+
+  if (ws.sim) ws.sim.stop();
+  ws.sim = d3.forceSimulation(ws.nodes)
+    .force('charge',    d3.forceManyBody().strength(ws.simParams.charge).distanceMax(600))
+    .force('collision', d3.forceCollide().radius(n => Math.max(n.w, n.h) * 0.6 + ws.simParams.coll).strength(0.9))
+    .force('link',      d3.forceLink(ws.edges).id((_, i) => i).distance(ws.simParams.link).strength(0.25))
+    .force('cx',        d3.forceX(W / 2).strength(0.05))
+    .force('cy',        d3.forceY(H / 2).strength(0.05))
+    .alphaDecay(0.022)
+    .velocityDecay(0.4)
+    .on('tick', () => tick(ws))
+    .on('end',  () => { updateBirdview(ws); });
+  if (!ws.simRunning) ws.sim.stop();
+
+  setTimeout(() => fitGraph(ws, true), 900);
+
+  ws.tab.querySelector('.ws-dot').className =
+    `ws-dot ${ws.nodes.length > 0 ? 'green' : 'empty'}`;
+  if (ws.id === activeWsId) updateStatusBar(ws);
+
+  buildTree(ws, data);
+}
+
+/* ── Tick ──────────────────────────────────────────────────────── */
+function tick(ws) {
+  ws.nodes.forEach(n => {
+    if (!isFinite(n.x) || !isFinite(n.y)) return;
+    if (n.tag === 'circle' || n.tag === 'ellipse') {
+      n.el.setAttribute('cx', n.x + n.rx);
+      n.el.setAttribute('cy', n.y + n.ry);
+    } else if (n.tag === 'g') {
+      n.el.setAttribute('transform', `translate(${n.x},${n.y})`);
+    } else {
+      n.el.setAttribute('x', n.x);
+      n.el.setAttribute('y', n.y);
+    }
+  });
+
+  /* forceLink mutates source/target from indices to node objects.
+     Guard with typeof check — first tick may fire before mutation. */
+  ws.edges.forEach(e => {
+    const s = e.source, t = e.target;
+    if (typeof s !== 'object' || typeof t !== 'object') return;
+    if (!isFinite(s.x) || !isFinite(s.y) || !isFinite(t.x) || !isFinite(t.y)) return;
+    const { x1, y1, x2, y2 } = _edgePts(s, t);
+    e.el.setAttribute('x1', x1); e.el.setAttribute('y1', y1);
+    e.el.setAttribute('x2', x2); e.el.setAttribute('y2', y2);
+  });
+
+  if (ws.sim && ws.sim.alpha() < 0.15) updateBirdview(ws);
+}
+
+/* ── Fit ───────────────────────────────────────────────────────── */
+function fitGraph(ws, animate) {
+  if (!ws.zoom || !ws.nodes.length) return;
+  const W = ws.svgEl.clientWidth, H = ws.svgEl.clientHeight;
+  if (!W || !H) return;
+  const pad  = 60;
+  const minX = Math.min(...ws.nodes.map(n => n.x));
+  const maxX = Math.max(...ws.nodes.map(n => n.x + n.w));
+  const minY = Math.min(...ws.nodes.map(n => n.y));
+  const maxY = Math.max(...ws.nodes.map(n => n.y + n.h));
+  const gW = maxX - minX || 1, gH = maxY - minY || 1;
+  const s  = Math.min(0.95, Math.min((W - pad * 2) / gW, (H - pad * 2) / gH));
+  const tx = (W - gW * s) / 2 - minX * s, ty = (H - gH * s) / 2 - minY * s;
+  const target = d3.zoomIdentity.translate(tx, ty).scale(s);
+  animate
+    ? d3.select(ws.svgEl).transition().duration(480).ease(d3.easeCubicOut).call(ws.zoom.transform, target)
+    : d3.select(ws.svgEl).call(ws.zoom.transform, target);
+}
+
+/* ── Selection ─────────────────────────────────────────────────── */
+function selectNode(ws, id) {
+  ws.selectedId = id;
+
+  /* Nodes — highlight selected, restore others */
+  ws.nodes.forEach(n => {
+    const bg = n.el.querySelector('rect');
+    if (!bg) return;
+    if (!bg._origStroke) bg._origStroke = bg.getAttribute('stroke');
+    bg.setAttribute('stroke', n.id === id ? '#00d9ff' : (bg._origStroke || ''));
+  });
+
+  /* Edges — highlight connected edges, dim the rest */
+  ws.edges.forEach(e => {
+    const s = e.source, t = e.target;
+    if (typeof s !== 'object' || typeof t !== 'object') return;
+    const connected = id && (s.id === id || t.id === id);
+    e.el.classList.toggle('highlighted', !!connected);
+    e.el.style.opacity = (!id || connected) ? '' : '0.2';
+  });
+  ws.pane.querySelectorAll('.tree-node').forEach(el =>
+    el.classList.toggle('selected', el.dataset.id === id));
+  if (id) showProperties(ws, id);
+  else    clearProperties(ws);
+  if (ws.id === activeWsId) {
+    const sb = document.getElementById('sb-sel');
+    if (id) { sb.style.display = 'flex'; document.getElementById('sb-sel-id').textContent = id; }
+    else      sb.style.display = 'none';
+  }
+  updateBirdview(ws);
+}
+
+/* ── Hover highlight ────────────────────────────────────────────── */
+function hlNode(ws, id) {
+  const conn = new Set([id]);
+  ws.edges.forEach(e => {
+    const s = e.source, t = e.target;
+    if (typeof s === 'object' && s.id === id) conn.add(t.id);
+    if (typeof t === 'object' && t.id === id) conn.add(s.id);
+  });
+  ws.nodes.forEach(n => { n.el.style.opacity = conn.has(n.id) ? 1 : 0.2; });
+  ws.edges.forEach(e => {
+    const s = e.source, t = e.target;
+    const hi = typeof s === 'object' && typeof t === 'object' &&
+               (s.id === id || t.id === id);
+    e.el.classList.toggle('highlighted', hi);
+    e.el.style.opacity = hi ? 1 : 0.15;
+  });
+}
+
+function clearHl(ws) {
+  ws.nodes.forEach(n => { n.el.style.opacity = ''; });
+  ws.edges.forEach(e => { e.el.classList.remove('highlighted'); e.el.style.opacity = ''; });
+}
+
+/* ── Fallback renderer (kept for API compat) ─────────────────── */
+const _fallbackRenderer = {
+  renderNode(g, d) {
+    d.w = 120; d.h = 40;
+    g.append('rect').attr('class', 'block-bg').attr('width', 120).attr('height', 40).attr('rx', 4);
+    g.append('text').attr('x', 10).attr('y', 25)
+      .attr('font-size', '11px').attr('font-family', 'JetBrains Mono,monospace')
+      .attr('fill', '#dde1ec').text(d.id);
+  },
+};
+
+
+
+/* ── js/main.js ── */
+
+/* ══════════════════════════════════════════════════════════════
+   main.js — Workspace manager and application init.
+
+   Data source:  window.NESSIE_SERVER_STATE (injected by Python)
+
+   window.NESSIE_SERVER_STATE = {
+     activeWorkspaceIndex: 0,
+     workspaces: [
+       {
+         id:         'ws-1',
+         name:       'my_graph',        // = graph.name
+         pluginName: 'block_visualizer',
+         pluginHtml: '<svg id="main-view-my_graph">...</svg><script>...<script>',
+         graphData:  { type, nodes, edges },  // graph.to_dict()
+       },
+       ...
+     ]
+   }
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+/* Shared globals (referenced by all other modules) */
+let workspaces = [];
+let activeWsId = null;
+window.NessiePlugins = window.NessiePlugins || {};
+
+function getWs(id)  { return workspaces.find(w => w.id === id); }
+function activeWs() { return getWs(activeWsId); }
+
+/* ── Create and register one workspace ─────────────────────── */
+function initWorkspace(spec) {
+  const ws = {
+    id:         spec.id,
+    label:      spec.name,
+    pluginName: spec.pluginName || '',
+    graphData:  spec.graphData || null,
+
+    /* D3 state */
+    nodes: [], edges: [],
+    sim:   null, zoom: null,
+
+    /* UI state — restored from savedState below */
+    selectedId:    null,
+    activeFilters: [],
+    simRunning:    true,
+    simParams:     { ...DEFAULTS },
+    transform:     d3.zoomIdentity,
+
+    /* DOM refs — populated after pane is attached */
+    pane:           null,
+    svgEl:          null,
+    bvCanvas:       null,
+    conOutput:      null,
+    filterStack:    null,
+    filterBadge:    null,
+    treeBody:       null,
+    propsBody:      null,
+    tab:            null,
+    _activeTab:     'console',
+    _bv:            null,
+  };
+
+  /* Pane and tab are already in DOM (server-rendered) — just wire them */
+  attachWorkspacePaneDOM(ws);
+  attachWorkspaceTab(ws);
+
+  /* Restore persisted UI state (sliders, layout, etc.) */
+  /* Wire all controls */
+  wireConsoleControls(ws);
+  wireFilterControls(ws);
+  wireTreeControls(ws);
+  wireSettingsControls(ws);
+  wireBirdviewControls(ws);
+  wireZoomButtons(ws);
+
+  /* Load the graph */
+  if (ws.graphData) {
+    loadServerFilters(ws, ws.graphData);
+    loadServerConsoleMessages(ws, ws.graphData);
+    loadGraph(ws, ws.graphData);
+
+    /* Restore selection */
+    /* Restore zoom (delayed so sim tick doesn't overwrite it) */
+  } else {
+  }
+
+  workspaces.push(ws);
+  return ws;
+}
+
+/* ── Wire up a server-rendered pane (pane already in DOM) ───── */
+function attachWorkspacePaneDOM(ws) {
+  const pane = document.querySelector(`.ws-pane[data-ws-id="${ws.id}"]`);
+  if (!pane) { console.error('Nessie: pane not found for', ws.id); return; }
+  ws.pane = pane;
+
+  /* Grab refs */
+  ws.svgEl           = pane.querySelector('svg[id^="main-view"], svg[id^="main_view"], .graph-svg');
+  ws.bvCanvas        = pane.querySelector('.bv-canvas');
+  ws.conOutput       = pane.querySelector('.con-output');
+  ws.filterStack     = pane.querySelector('.filter-stack');
+  ws.filterBadge     = pane.querySelector('.btab-badge');
+  ws.treeBody        = pane.querySelector('.tree-body');
+  ws.propsBody       = pane.querySelector('.props-body');
+
+  /* Resize handles */
+  setupResizeHandle(pane.querySelector('.v-handle-left'),  pane.querySelector('.col-left'),    'col',       120, 400);
+  setupResizeHandle(pane.querySelector('.v-handle-right'), pane.querySelector('.col-right'),   'col-right', 180, 480);
+  setupResizeHandle(pane.querySelector('.h-handle'),       pane.querySelector('.bottom-pane'), 'row',       100, 480);
+}
+
+/* ── Wire up a server-rendered tab (tab already in DOM) ──────── */
+function attachWorkspaceTab(ws) {
+  const tab = document.querySelector(`.ws-tab[data-ws-id="${ws.id}"]`);
+  if (!tab) { console.error('Nessie: tab not found for', ws.id); return; }
+  tab.addEventListener('click', e => {
+    if (e.target.classList.contains('ws-tab-close')) closeWorkspace(ws.id);
+    // TODO: povezati na back — promena aktivnog workspace-a dolazi sa servera
+	  alert("Promena workspace-a")
+  });
+  ws.tab = tab;
+}
+
+/* ── Wire zoom buttons ──────────────────────────────────────── */
+function wireZoomButtons(ws) {
+  const p = ws.pane;
+  p.querySelector('.zoom-in').addEventListener('click', () => {
+    if (ws.zoom) d3.select(ws.svgEl).transition().duration(250).call(ws.zoom.scaleBy, 1.4);
+  });
+  p.querySelector('.zoom-out').addEventListener('click', () => {
+    if (ws.zoom) d3.select(ws.svgEl).transition().duration(250).call(ws.zoom.scaleBy, 0.7);
+  });
+  p.querySelector('.zoom-fit').addEventListener('click', () => fitGraph(ws, true));
+}
+
+/* ── Wire bottom tabs (Console / Filters) ───────────────────── */
+document.addEventListener('click', e => {
+  const tab = e.target.closest('.btab');
+  if (!tab) return;
+  const pane = tab.closest('.ws-pane'); if (!pane) return;
+  pane.querySelectorAll('.btab').forEach(t => t.classList.remove('active'));
+  pane.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  const id = tab.dataset.tab;
+  pane.querySelector(`.tab-pane[data-tab-id="${id}"]`)?.classList.add('active');
+  const ws = workspaces.find(w => w.pane === pane);
+  if (ws) { ws._activeTab = id; }
+}, true);
+
+/* ── Switch active workspace ────────────────────────────────── */
+function switchWorkspace(id) {
+	// TODO: switch workspace
+	alert("Switching")
+  activeWsId = id;
+  document.querySelectorAll('.ws-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.wsId === id));
+  document.querySelectorAll('.ws-pane').forEach(p =>
+    p.classList.toggle('active', p.dataset.wsId === id));
+  const ws = getWs(id);
+  if (ws) {
+    updateStatusBar(ws);
+    if (ws.nodes.length) {
+      setTimeout(() => {
+        updateBirdview(ws);
+        if (!ws.svgEl) return;
+        const W = ws.svgEl.clientWidth, H = ws.svgEl.clientHeight;
+        if (!W || !H) return;
+        /* Recentre forces with real dimensions (pane was hidden at loadGraph time) */
+        if (ws.sim) {
+          ws.sim.force('cx', d3.forceX(W / 2).strength(0.05));
+          ws.sim.force('cy', d3.forceY(H / 2).strength(0.05));
+          ws.sim.alpha(0.3).restart();
+        }
+        fitGraph(ws, false);
+      }, 50);
+    }
+  }
+}
+
+/* ── Close a workspace ──────────────────────────────────────── */
+function closeWorkspace(id) {
+  if (workspaces.length <= 1) return;
+  const idx = workspaces.findIndex(w => w.id === id);
+  const ws  = workspaces[idx];
+  if (ws.sim) ws.sim.stop();
+  ws.pane.remove();
+  ws.tab.remove();
+  workspaces.splice(idx, 1);
+  switchWorkspace(workspaces[Math.min(idx, workspaces.length-1)].id);
+  // TODO: close workspace
+  alert("Close")
+}
+
+/* ── Status bar ─────────────────────────────────────────────── */
+function updateStatusBar(ws) {
+  document.getElementById('sb-dot').classList.toggle('live', ws.nodes.length > 0);
+  document.getElementById('sb-status').textContent =
+    ws.graphData ? (ws.graphData.type || '') + ' graph' : 'No graph loaded';
+  document.getElementById('sb-stats').style.display    = ws.nodes.length ? 'flex'  : 'none';
+  document.getElementById('sb-sep2').style.display     = ws.nodes.length ? 'block' : 'none';
+  document.getElementById('sb-n').textContent           = ws.nodes.length;
+  document.getElementById('sb-e').textContent           = ws.edges.length;
+  document.getElementById('sb-zoom-item').style.display = ws.nodes.length ? 'flex'  : 'none';
+  document.getElementById('sb-zoom').textContent =
+    Math.round(ws.transform.k * 100) + '%';
+  const sel = document.getElementById('sb-sel');
+  if (ws.selectedId) {
+    sel.style.display='flex';
+    document.getElementById('sb-sel-id').textContent = ws.selectedId;
+  } else sel.style.display='none';
+  document.getElementById('btn-reload').disabled = !ws.graphData;
+  document.getElementById('sb-plugin-label').textContent   = ws.pluginName;
+}
+
+/* ── Global toolbar wiring ──────────────────────────────────── */
+document.getElementById('btn-fit').addEventListener('click', () => {
+  const ws = activeWs(); if (ws) fitGraph(ws, true);
+});
+document.getElementById('btn-reload').addEventListener('click', () => {
+  const ws = activeWs(); if (ws && ws.graphData) loadGraph(ws, ws.graphData);
+});
+document.getElementById('plugin-chip').addEventListener('click', () => {
+  alert('TODO: Plugin selector\n\nCurrent plugin: ' + (activeWs()?.pluginName || ''));
+});
+document.getElementById('ws-add').addEventListener('click', () => {
+	// TODO:  new workspace dialog
+  alert('TODO: New workspace dialog');
+});
+document.getElementById('btn-settings-toggle').addEventListener('click', () => {
+  const ws = activeWs(); if (!ws) return;
+  const body  = ws.pane.querySelector('.settings-body');
+  const arrow = ws.pane.querySelector('.settings-arrow');
+  const open  = body.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+});
+
+/* ──────────────────────────────────────────────────────────────
+   INIT
+   ────────────────────────────────────────────────────────────── */
+(function init() {
+  const server    = window.NESSIE_SERVER_STATE || {};
+  (server.workspaces || []).forEach(spec => {
+    initWorkspace(spec);
+  });
+
+  if (!workspaces.length) {
+    console.error('Nessie: no workspaces initialised — check NESSIE_SERVER_STATE');
+    return;
+  }
+
+  /* Determine active workspace */
+  const targetId = server.workspaces?.[server.activeWorkspaceIndex ?? 0]?.id
+    ?? workspaces[0].id;
+  const exists = workspaces.find(w => w.id === targetId);
+  switchWorkspace(exists ? targetId : workspaces[0].id);
+
+})();
+
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+/* ══════════════════════════════════════════════════════════════
+   toolbar.css — Top application toolbar
+   ══════════════════════════════════════════════════════════════ */
+
+#toolbar {
+  height: var(--toolbar-h); flex-shrink: 0;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 10px; gap: 2px; z-index: 100;
+}
+
+/* Brand */
+.brand {
+  display: flex; align-items: center; gap: 8px;
+  margin-right: 10px; padding-right: 10px;
+  border-right: 1px solid var(--border-bright); flex-shrink: 0;
+}
+.brand-name {
+  font-family: var(--font-ui); font-weight: 700;
+  font-size: 13px; letter-spacing: -.3px;
+}
+.brand-name em { font-style: normal; color: var(--accent); }
+
+/* Separators / spacer */
+.tb-sep    { width: 1px; height: 18px; background: var(--border-bright); margin: 0 4px; flex-shrink: 0; }
+.tb-spacer { flex: 1; }
+
+/* Toolbar buttons */
+.tb-btn {
+  display: flex; align-items: center; gap: 5px;
+  height: 28px; padding: 0 9px;
+  border: none; background: transparent; color: var(--text-2);
+  font-family: var(--font-mono); font-size: 11px;
+  border-radius: 4px; cursor: pointer;
+  transition: background .12s, color .12s; white-space: nowrap; flex-shrink: 0;
+}
+.tb-btn:hover    { background: var(--bg-hover); color: var(--text-1); }
+.tb-btn:disabled { opacity: .3; cursor: not-allowed; }
+.tb-btn.active   { background: var(--accent-dim); color: var(--accent); }
+.tb-btn svg      { width: 13px; height: 13px; opacity: .7; flex-shrink: 0; }
+.tb-btn:hover svg { opacity: 1; }
+
+/* Plugin chip */
+.plugin-chip {
+  display: flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 8px 0 9px;
+  background: var(--bg-active);
+  border: 1px solid var(--border-bright);
+  border-radius: 5px; font-size: 10.5px; color: var(--text-2);
+  cursor: pointer; transition: border-color .12s, color .12s; flex-shrink: 0;
+}
+.plugin-chip:hover { border-color: var(--accent); color: var(--text-1); }
+
+.plugin-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 5px var(--green); flex-shrink: 0;
+}
+.plugin-name  { color: var(--green); }
+.plugin-change {
+  font-size: 9px; color: var(--text-3); margin-left: 2px;
+  border-left: 1px solid var(--border-bright); padding-left: 6px;
+  transition: color .1s;
+}
+.plugin-chip:hover .plugin-change { color: var(--accent); }
