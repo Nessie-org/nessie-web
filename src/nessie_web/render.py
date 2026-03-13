@@ -4,7 +4,6 @@ nessie_explorer.render
 Jedina javna funkcija: ``render(adapter) -> str``.
 """
 from __future__ import annotations
-import json
 from pathlib import Path
 from typing import Any
 
@@ -24,9 +23,12 @@ _CSS_FILES = [
     "css/bottom.css",
     "css/right-sidebar.css",
     "css/statusbar.css",
+    "css/picker.css",
+    "css/popup-and-search.css"
 ]
 
 _JS_FILES = [
+    "js/backend.js",
     "js/resize.js",
     "js/settings.js",
     "js/properties.js",
@@ -96,6 +98,13 @@ def render(adapter: Context) -> str:
 
         graph_dict["console_messages"] = console_messages
 
+        # Serialize search query from context
+        try:
+            search_query = adapter.get_search_at(i) or ""
+        except (AttributeError, TypeError):
+            search_query = ""
+        graph_dict["search_query"] = search_query
+
         workspaces_js.append({
             "id":        ws_id,
             "name":      name,
@@ -126,10 +135,12 @@ def render(adapter: Context) -> str:
     )
     template = env.get_template("base.html.jinja2")
 
+    plugin_name = adapter.get_visualiser_name_at(active_index) if active_index is not None else "Nessie Graph Explorer"
+
     return template.render(
         workspaces=workspaces_html,
         server_state_json=server_state,
         inline_css=inline_css,
         inline_js=inline_js,
-		plugin_name=adapter.get_visualiser_name_at(active_index) if active_index is not None else "-",
+		plugin_name=plugin_name,
     )
