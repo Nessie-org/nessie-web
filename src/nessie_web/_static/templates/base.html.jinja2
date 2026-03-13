@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 {{ inline_css }}
 </style>
@@ -54,6 +55,14 @@
     </div>
 
     <div class="tb-sep"></div>
+
+    <div class="tb-search">
+      <input type="text" id="search-input" class="tb-search-input"
+             placeholder="Search…" autocomplete="off" spellcheck="false">
+      <button class="tb-btn icon-btn" id="search-btn" title="Search"><i class="fa-solid fa-magnifying-glass" style="font-size:14px"></i></button>
+    </div>
+
+    <div class="tb-sep"></div>
     <button class="tb-btn icon-btn" id="btn-settings-toggle" title="Settings" style="width:32px;padding:0;justify-content:center">⚙</button>
   </div>
 
@@ -66,7 +75,7 @@
       <span class="ws-tab-close" title="Close">✕</span>
     </div>
     {%- endfor %}
-    <div class="ws-add" id="ws-add" title="New workspace">＋</div>
+    <div class="ws-add" id="ws-add" title="New workspace"><i class="fa-solid fa-plus"></i></div>
   </div>
 
   <!-- ── Workspace Content — server-rendered, scripts execute ──── -->
@@ -81,8 +90,8 @@
             <div class="panel-hdr">
               <span class="panel-title">Tree View</span>
               <div class="panel-actions">
-                <button class="icon-btn btn-expand-all"   title="Expand all">⊞</button>
-                <button class="icon-btn btn-collapse-all" title="Collapse all">⊟</button>
+                <button class="icon-btn btn-expand-all"   title="Expand all"><i class="fa-solid fa-expand"></i></button>
+                <button class="icon-btn btn-collapse-all" title="Collapse all"><i class="fa-solid fa-compress"></i></button>
               </div>
             </div>
             <div class="tree-body" style="flex:1;overflow-y:auto">
@@ -111,11 +120,6 @@
               <div class="eh">Waiting for graph data…</div>
             </div>
 
-            <div class="filter-banner">
-              <span class="filter-banner-txt">⚗ Filter active</span>
-              <button class="fb-clear">✕ Clear all</button>
-            </div>
-
             <div class="zoom-ctrls">
               <button class="zoom-btn zoom-in">+</button>
               <button class="zoom-btn zoom-fit">⊡</button>
@@ -135,6 +139,11 @@
             </div>
 
             <div class="tab-pane active" data-tab-id="console">
+              <div style="display:flex;justify-content:flex-end;padding:2px 6px;border-bottom:1px solid var(--border)">
+                <button class="icon-btn con-clear" title="Clear console">
+                  <i class="fa-solid fa-trash-can" style="font-size:11px"></i>
+                </button>
+              </div>
               <div class="con-output"></div>
               <div class="con-input-row">
                 <span class="con-prompt">nessie:~$</span>
