@@ -270,9 +270,12 @@ const searchBtn = document.getElementById('search-btn');
 
 function doSearch() {
 	const query = searchInput?.value.trim();
-	if (!query) return;
+	let body = { query };
+	if (!query) {
+		body = { query: "" };
+	}
 	// BACK INTEGRATION
-	backendAction('search', { query });
+	backendAction('search', body);
 }
 searchBtn?.addEventListener('click', doSearch);
 searchInput?.addEventListener('keydown', (e) => {
